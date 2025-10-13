@@ -664,6 +664,25 @@ jQuery(document).ready(function () {
         $("#finalTotal").val(parseFloat(response.grand_total || 0).toFixed(2));
         $("#remark").val(response.remark || "");
 
+        // Handle payment section visibility and data for credit invoices
+        if (response.payment_type == 2) {
+          // Credit payment - show payment section with data
+          $("#paymentSection").show();
+          $("#paidAmount").val(parseFloat(response.outstanding_settle_amount || 0).toFixed(2));
+          const balanceAmount = parseFloat(response.grand_total || 0) - parseFloat(response.outstanding_settle_amount || 0);
+          $("#balanceAmount").val(balanceAmount.toFixed(2));
+          
+          // Set credit period if available
+          $("#credit_period").val(response.credit_period || "").trigger("change");
+        } else {
+          // Cash payment - hide payment section and clear credit period
+          $("#paymentSection").hide();
+          $("#credit_period").val("").trigger("change");
+        }
+
+        // Show print button since invoice is loaded
+        $("#print").show();
+
         // Trigger change events for any dependent fields
         $("select").trigger("change");
 

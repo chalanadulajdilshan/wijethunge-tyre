@@ -363,6 +363,15 @@ if (isset($_POST['action']) && $_POST['action'] == 'latest') {
 }
 
 
+if (isset($_POST['action']) && $_POST['action'] == 'search') {
+    $SALES_INVOICE = new SalesInvoice();
+    $invoices = $SALES_INVOICE->search($_POST['q']);
+
+    echo json_encode(["data" => $invoices]);
+    exit();
+}
+
+
 // Handle cancel invoice action
 // Check invoice status
 if (isset($_POST['action']) && $_POST['action'] == 'check_status') {
