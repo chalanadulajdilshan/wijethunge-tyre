@@ -8,8 +8,8 @@ class StockItemTmp
     public $qty;
     public $cost;
     public $department_id;
-    public $list_price;
-    public $invoice_price;
+    public $customer_price;
+    public $dealer_price;
     public $created_at;
     public $status;
 
@@ -31,10 +31,10 @@ class StockItemTmp
     public function create()
     {
         $query = "INSERT INTO `stock_item_tmp` (
-            `arn_id`, `item_id`, `qty`, `cost`, `list_price`,`invoice_price`, `department_id`, `status`, `created_at`
+            `arn_id`, `item_id`, `qty`, `cost`, `customer_price`,`dealer_price`, `department_id`, `status`, `created_at`
         ) VALUES (
             '{$this->arn_id}', '{$this->item_id}', '{$this->qty}', '{$this->cost}',
-            '{$this->list_price}','{$this->invoice_price}', '{$this->department_id}', '{$this->status}', NOW()
+            '{$this->customer_price}','{$this->dealer_price}', '{$this->department_id}', '{$this->status}', NOW()
         )";
 
         $db = new Database();
@@ -55,8 +55,8 @@ class StockItemTmp
             `qty` = '{$this->qty}',
             `cost` = '{$this->cost}',
             `department_id` = '{$this->department_id}',
-            `list_price` = '{$this->list_price}',
-            `invoice_price` = '{$this->invoice_price}'
+            `customer_price` = '{$this->customer_price}',
+            `dealer_price` = '{$this->dealer_price}'
         WHERE `id` = '{$this->id}'";
 
         $db = new Database();
@@ -190,7 +190,7 @@ class StockItemTmp
                 $updateDest = "UPDATE stock_item_tmp SET qty = '" . $destNewQty . "' WHERE id = " . (int)$destRow['id'];
                 $db->readQuery($updateDest);
             } else {
-                $insertDest = "INSERT INTO stock_item_tmp (arn_id, item_id, qty, cost, list_price, invoice_price, department_id, created_at) VALUES ('" . (int)$lot['arn_id'] . "', '{$item_id}', '" . $movable . "', '" . (float)$lot['cost'] . "', '" . (float)$lot['list_price'] . "', '" . (float)$lot['invoice_price'] . "', '{$to_department_id}', NOW())";
+                $insertDest = "INSERT INTO stock_item_tmp (arn_id, item_id, qty, cost, customer_price, dealer_price, department_id, created_at) VALUES ('" . (int)$lot['arn_id'] . "', '{$item_id}', '" . $movable . "', '" . (float)$lot['cost'] . "', '" . (float)$lot['customer_price'] . "', '" . (float)$lot['dealer_price'] . "', '{$to_department_id}', NOW())";
                 $db->readQuery($insertDest);
             }
 
@@ -246,7 +246,7 @@ class StockItemTmp
 
     public function updateStockItemTmpPrice($id, $field, $value)
     {
-        $allowedFields = ['cost', 'invoice_price', 'list_price'];
+        $allowedFields = ['cost', 'dealer_price', 'customer_price'];
 
         if (!in_array($field, $allowedFields)) {
             return ['error' => 'Invalid field'];
@@ -357,7 +357,7 @@ class StockItemTmp
         }
 
         $lotQuery = "
-            SELECT sit.id, sit.arn_id, sit.qty, sit.cost, sit.list_price
+            SELECT sit.id, sit.arn_id, sit.qty, sit.cost, sit.customer_price
             FROM stock_item_tmp sit
             INNER JOIN arn_master am ON am.id = sit.arn_id
             WHERE sit.item_id = {$item_id}
@@ -386,7 +386,7 @@ class StockItemTmp
                 $item_id,
                 $deduct,
                 (float)$lot['cost'],
-                (float)$lot['list_price']
+                (float)$lot['customer_price']
             );
 
             if (!$arnUpdateSuccess) {
@@ -425,7 +425,7 @@ class StockItemTmp
         }
 
         $arnItemsQuery = "
-            SELECT id, received_qty, final_cost, list_price
+            SELECT id, received_qty, final_cost, customer_price
             FROM arn_items
             WHERE arn_id = {$arn_id}
               AND item_code = {$item_id}
@@ -448,7 +448,7 @@ class StockItemTmp
                 $unitCost = (float)$fallbackCost;
             }
 
-            $listPrice = isset($arnItem['list_price']) ? (float)$arnItem['list_price'] : 0.0;
+            $listPrice = isset($arnItem['customer_price']) ? (float)$arnItem['customer_price'] : 0.0;
             if ($listPrice <= 0) {
                 $listPrice = (float)$fallbackListPrice;
             }

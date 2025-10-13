@@ -200,14 +200,14 @@ $item_id = 'TI/0' . ($lastId + 1);
                                             <!-- List Price -->
                                             <div class="col-md-2">
                                                 <div class="mb-3">
-                                                    <label class="form-label" for="list_price"> List Price <span
+                                                    <label class="form-label" for="list_price"> Customer Price <span
                                                             class="text-danger">*</span></label>
                                                     <input id="list_price" name="list_price" type="text"
-                                                        class="form-control list-price" placeholder="Enter item List Price">
+                                                        class="form-control list-price" placeholder="Enter item Customer Price">
                                                 </div>
                                             </div>
                                             <!-- DIS Column -->
-                                            <div class="col-md-2">
+                                            <div class="col-md-2" style="display: none;">
                                                 <div class="mb-3">
                                                     <label class="form-label" for="discount">DIS % <span
                                                             class="text-danger">*</span></label>
@@ -218,10 +218,10 @@ $item_id = 'TI/0' . ($lastId + 1);
                                             <!-- Invoice Price -->
                                             <div class="col-md-2">
                                                 <div class="mb-3">
-                                                    <label class="form-label">Selling Price <span
+                                                    <label class="form-label">Dealer Price <span
                                                             class="text-danger">*</span></label>
                                                     <input id="invoice_price" name="invoice_price" type="text"
-                                                        class="form-control invoice-price" placeholder="Auto-calculated">
+                                                        class="form-control invoice-price" placeholder="Enter dealer price">
                                                 </div>
                                             </div>
 
@@ -326,48 +326,11 @@ $item_id = 'TI/0' . ($lastId + 1);
                 $('#name').val(itemName);
             }
 
-            // Function to calculate invoice price based on list price and discount
-            function calculateInvoicePrice() {
-                const listPrice = parseFloat($('#list_price').val()) || 0;
-                const discount = parseFloat($('#discount').val()) || 0;
-
-                // Calculate discount amount
-                const discountAmount = listPrice * (discount / 100);
-                const invoicePrice = listPrice - discountAmount;
-
-                // Update invoice price field with 2 decimal places
-                $('#invoice_price').val(invoicePrice.toFixed(2));
-            }
-
-            // Function to calculate discount based on list price and invoice price
-            function calculateDiscount() {
-                const listPrice = parseFloat($('#list_price').val()) || 0;
-                const invoicePrice = parseFloat($('#invoice_price').val()) || 0;
-
-                if (listPrice > 0 && invoicePrice > 0) {
-                    // Calculate discount percentage
-                    const discount = ((listPrice - invoicePrice) / listPrice) * 100;
-
-                    // Update discount field with 2 decimal places
-                    $('#discount').val(discount.toFixed(2));
-                }
-            }
-
             // Add event listeners to the relevant fields
             $('#brand, #size, #pattern').on('change keyup', updateItemName);
 
-            // When list price or discount changes, update invoice price
-            $('#list_price, #discount').on('change keyup', function() {
-                calculateInvoicePrice();
-            });
-
-            // When invoice price changes, update discount
-            $('#invoice_price').on('change keyup', function() {
-                calculateDiscount();
-            });
-
-            // Initialize calculations on page load
-            calculateInvoicePrice();
+            // Initialize on page load
+            updateItemName();
         });
     </script>
 

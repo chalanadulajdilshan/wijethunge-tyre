@@ -115,10 +115,10 @@ if (isset($data['create'])) {
             $ARN_ITEM->discount_6 = $item['dis6'];
             $ARN_ITEM->discount_7 = $item['dis7'];
             $ARN_ITEM->discount_8 = $item['dis8'];
-            $ARN_ITEM->final_cost = $item['actual_cost'];
+            $ARN_ITEM->final_cost = 0; // Not used anymore
             $ARN_ITEM->unit_total = $item['unit_total'];
-            $ARN_ITEM->list_price = $item['list_price'];
-            $ARN_ITEM->invoice_price = $item['invoice_price'];
+            $ARN_ITEM->customer_price = $item['list_price'];
+            $ARN_ITEM->dealer_price = $item['invoice_price'];
             $ARN_ITEM->created_at = date("Y-m-d H:i:s");
             $ARN_ITEM->create();
 
@@ -131,8 +131,8 @@ if (isset($data['create'])) {
                 $STOCK_ITEM_TMP->item_id = $itemId;
                 $STOCK_ITEM_TMP->qty = $recQty;
                 $STOCK_ITEM_TMP->cost = $item['actual_cost'];
-                $STOCK_ITEM_TMP->list_price = $item['list_price'];
-                $STOCK_ITEM_TMP->invoice_price = $item['invoice_price'];
+                $STOCK_ITEM_TMP->customer_price = $item['list_price'];
+                $STOCK_ITEM_TMP->dealer_price = $item['invoice_price'];
                 $STOCK_ITEM_TMP->department_id = $departmentId;
                 $STOCK_ITEM_TMP->status = 1;
                 $STOCK_ITEM_TMP->create();
@@ -150,12 +150,6 @@ if (isset($data['create'])) {
                     $stockMaster->is_active = 1;
                     $stockMaster->create();
                 }
-
-                // Item Master update
-                $ITEM_master = new ItemMaster($itemId);
-                $ITEM_master->list_price = $item['list_price'];
-                $ITEM_master->invoice_price = $item['invoice_price'];
-                $ITEM_master->update();
 
                 // Stock Transaction log for additions
                 $stockTransaction = new StockTransaction(NULL);

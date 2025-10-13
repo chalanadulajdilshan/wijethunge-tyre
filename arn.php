@@ -386,11 +386,11 @@ $arn_id = $COMPANY_PROFILE_DETAILS->company_code . '/ARN/00/' . ($lastId + 1);
 
                                             <h5>Item Details</h5>
 
-                                            <div class="row gx-2 gy-2" id="arn-item-table">
+                                            <div class="row g-2 align-items-end" id="arn-item-table">
                                                 <!-- ────────── First Line of Fields ────────── -->
 
 
-                                                <div class="  col-sm-2 col-md-2 col-lg-2" style="width: 345px;">
+                                                <div class="col-12 col-lg-3" style="width: 345px;">
                                                     <label for="Description" class="form-label">Item Code</label>
                                                     <div class="input-group input-group-sm">
                                                         <input id="itemCode" name="itemCode" type="text"
@@ -402,42 +402,40 @@ $arn_id = $COMPANY_PROFILE_DETAILS->company_code . '/ARN/00/' . ($lastId + 1);
                                                     </div>
                                                 </div>
 
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+                                                <div class="col-6 col-lg">
                                                     <label class="form-label">Rec Qty</label>
                                                     <input type="number" class=" form-control form-control-sm"
                                                         id="rec_quantity">
                                                 </div>
 
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
-                                                    <label class="form-label">List Price</label>
+                                                <div class="col-6 col-lg">
+                                                    <label class="form-label">Customer Price</label>
                                                     <input type="text" id="list_price" name="list_price"
                                                         class="form-control form-control-sm">
                                                 </div>
 
-
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+                                                <div class="col-6 col-lg" style="display: none;">
                                                     <label class="form-label"> Brand Dis %</label>
                                                     <input type="number" id="dis_1" class="form-control form-control-sm"
                                                         disabled>
                                                 </div>
 
-
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+                                                <div class="col-6 col-lg" style="display: none;">
                                                     <label class="form-label">Item Dis %</label>
                                                     <input type="number" id="dis_2" class="form-control form-control-sm"
                                                         disabled>
                                                 </div>
 
                                                 <!-- ────────── Second Line of Fields ────────── -->
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+                                                <div class="col-6 col-lg" style="display: none;">
                                                     <label class="form-label">Dis 3 %</label>
                                                     <input type="number" id="dis_3" class="form-control form-control-sm">
                                                 </div>
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+                                                <div class="col-6 col-lg" style="display: none;">
                                                     <label class="form-label">Dis 4 %</label>
                                                     <input type="number" id="dis_4" class="form-control form-control-sm">
                                                 </div>
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+                                                <div class="col-6 col-lg" style="display: none;">
                                                     <label class="form-label">Dis 5 %</label>
                                                     <input type="number" id="dis_5" class="form-control form-control-sm">
                                                 </div>
@@ -446,28 +444,29 @@ $arn_id = $COMPANY_PROFILE_DETAILS->company_code . '/ARN/00/' . ($lastId + 1);
                                                 <input type="hidden" id="dis_7">
                                                 <input type="hidden" id="dis_8">
 
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+                                                <div class="col-6 col-lg">
+                                                    <label class="form-label">Dealer Price</label>
+                                                    <input type="text" id="invoice_price"
+                                                        class="form-control form-control-sm">
+                                                </div>
+
+                                                <div class="col-6 col-lg">
                                                     <label class="form-label">Actual Cost</label>
                                                     <input type="text" id="actual_cost"
                                                         class="form-control form-control-sm  ">
                                                 </div>
 
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
-                                                    <label class="form-label">Selling Price</label>
-                                                    <input type="text" id="invoice_price"
-                                                        class="form-control form-control-sm">
-                                                </div>
 
 
 
-
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+                                                <div class="col-6 col-lg">
                                                     <label class="form-label">Unit Total</label>
                                                     <input type="text" id="unit_total"
                                                         class="form-control form-control-sm" readonly>
                                                 </div>
 
-                                                <div class="col-6 col-sm-4 col-md-2 col-lg-1 align-self-end">
+                                                <div class="col-6 col-lg">
+                                                    <label class="form-label">&nbsp;</label>
                                                     <button type="button" class="btn btn-success btn-sm w-100"
                                                         id="addItemBtn">
                                                         Add
@@ -481,15 +480,15 @@ $arn_id = $COMPANY_PROFILE_DETAILS->company_code . '/ARN/00/' . ($lastId + 1);
                                                         <th>Item Code</th>
                                                         <th>Ord Qty</th>
                                                         <th>Rec Qty</th>
-                                                        <th>List Price</th>
-                                                        <th>Brand Dis%</th>
-                                                        <th>Item Dis%</th>
-                                                        <th>Dis 3%</th>
-                                                        <th>Dis 4%</th>
-                                                        <th>Dis 5%</th>
-                                                        <th>Actual Cost</th>
+                                                        <th>Customer Price</th>
+                                                        <th style="display: none;">Brand Dis%</th>
+                                                        <th style="display: none;">Item Dis%</th>
+                                                        <th style="display: none;">Dis 3%</th>
+                                                        <th style="display: none;">Dis 4%</th>
+                                                        <th style="display: none;">Dis 5%</th>
                                                         <th>Unit Total</th>
-                                                        <th>Selling Price</th>
+                                                        <th>Dealer Price</th>
+                                                        <th>Actual Cost</th>
                                                         <th>Action</th>
                                                     </tr>
                                                 </thead>

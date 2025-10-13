@@ -25,8 +25,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_by_id') {
                 'group' => (int)$row['group'],
                 'size' => $row['size'],
                 'pattern' => $row['pattern'],
-                'list_price' => (float)$row['list_price'],
-                'invoice_price' => (float)$row['invoice_price'],
+                'list_price' => (float)$row['customer_price'],
+                'invoice_price' => (float)$row['dealer_price'],
                 're_order_level' => $row['re_order_level'],
                 're_order_qty' => $row['re_order_qty'],
                 'stock_type' => $row['stock_type'],
@@ -66,8 +66,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_by_code') {
                 'group' => (int)$row['group'],
                 'size' => $row['size'],
                 'pattern' => $row['pattern'],
-                'list_price' => (float)$row['list_price'],
-                'invoice_price' => (float)$row['invoice_price'],
+                'list_price' => (float)$row['customer_price'],
+                'invoice_price' => (float)$row['dealer_price'],
                 're_order_level' => $row['re_order_level'],
                 're_order_qty' => $row['re_order_qty'],
                 'stock_type' => $row['stock_type'],
@@ -98,8 +98,8 @@ if (isset($_POST['create'])) {
     $ITEM->pattern = $_POST['pattern'];
     $ITEM->group = $_POST['group'];
     $ITEM->category = $_POST['category'];
-    $ITEM->list_price = $_POST['list_price'];
-    $ITEM->invoice_price = $_POST['invoice_price'];
+    $ITEM->customer_price = $_POST['list_price'];
+    $ITEM->dealer_price = $_POST['invoice_price'];
     $ITEM->re_order_level = $_POST['re_order_level'];
     $ITEM->re_order_qty = $_POST['re_order_qty'];
     $ITEM->stock_type = $_POST['stock_type'];
@@ -167,8 +167,8 @@ if (isset($_POST['update'])) {
     $ITEM->re_order_qty = $_POST['re_order_qty'];
     $ITEM->stock_type = $_POST['stock_type'];
     $ITEM->note = $_POST['note'];
-    $ITEM->list_price = $_POST['list_price'];
-    $ITEM->invoice_price = $_POST['invoice_price'];
+    $ITEM->customer_price = $_POST['list_price'];
+    $ITEM->dealer_price = $_POST['invoice_price'];
     $ITEM->discount = $_POST['discount'];
     $ITEM->is_active = isset($_POST['is_active']) ? 1 : 0;
 
@@ -331,8 +331,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'fetch_for_stock_adjustment'
                 'name' => $item['name'],
                 'brand' => $item['brand_name'] ?? '',
                 'category' => $item['category_name'] ?? '',
-                'list_price' => number_format($item['list_price'], 2),
-                'invoice_price' => number_format($item['invoice_price'], 2),
+                'list_price' => number_format($item['customer_price'], 2),
+                'invoice_price' => number_format($item['dealer_price'], 2),
                 'available_qty' => (int)($item['available_qty'] ?? 0),
                 'discount' => isset($item['discount']) ? $item['discount'] . '%' : '0%',
                 'status_label' => ($item['is_active'] ?? 0) == 1 ?

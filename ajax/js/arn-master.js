@@ -280,92 +280,24 @@ jQuery(document).ready(function () {
     });
 
 
-    function calculatePayment(skipActualCost = false) {
+    function calculatePayment() {
         const recQty = parseFloat($('#rec_quantity').val()) || 0;
-        const list_price = parseFloat($('#list_price').val()) || 0;
-    
-        // Get discounts
-        const dis2 = parseFloat($('#dis_2').val()) || 0;
-        const dis3 = parseFloat($('#dis_3').val()) || 0;
-        const dis4 = parseFloat($('#dis_4').val()) || 0;
-        const dis5 = parseFloat($('#dis_5').val()) || 0;
-        const dis6 = parseFloat($('#dis_6').val()) || 0;
-        const dis7 = parseFloat($('#dis_7').val()) || 0;
-        const dis8 = parseFloat($('#dis_8').val()) || 0;
-    
-        let finalCost;
-        
-        if (skipActualCost) {
-            // Use the manually entered actual cost
-            finalCost = parseFloat($('#actual_cost').val()) || 0;
-        } else {
-            // Calculate discounts step by step
-            let disAmount2 = list_price * (dis2 / 100);
-            let disAmount3 = (list_price - disAmount2) * (dis3 / 100);
-            let disAmount4 = (list_price - disAmount2 - disAmount3) * (dis4 / 100);
-            let disAmount5 = (list_price - disAmount2 - disAmount3 - disAmount4) * (dis5 / 100);
-            let disAmount6 = (list_price - disAmount2 - disAmount3 - disAmount4 - disAmount5) * (dis6 / 100);
-            let disAmount7 = (list_price - disAmount2 - disAmount3 - disAmount4 - disAmount5 - disAmount6) * (dis7 / 100);
-            let disAmount8 = (list_price - disAmount2 - disAmount3 - disAmount4 - disAmount5 - disAmount6 - disAmount7) * (dis8 / 100);
-            
-            finalCost = list_price - disAmount2 - disAmount3 - disAmount4 - disAmount5 - disAmount6 - disAmount7 - disAmount8;
-            
-            // Debug logging (remove in production)
-            console.log('Discount calculation:', {
-                list_price, dis2, dis3, dis4, dis5, dis6, dis7, dis8,
-                disAmount2, disAmount3, disAmount4, disAmount5, disAmount6, disAmount7, disAmount8,
-                finalCost
-            });
-            
-            $('#actual_cost').val(finalCost.toFixed(2));
-        }
-        
-        let unitTotal = finalCost * recQty;
+        const actualCost = parseFloat($('#actual_cost').val()) || 0;
+        let unitTotal = actualCost * recQty;
         $('#unit_total').val(unitTotal.toFixed(2));
     }
     
 
-    // Bind function to relevant input fields (excluding actual_cost to prevent circular updates)
-    $('#arn-item-table').on('input', '#list_price,#rec_quantity,#dis_3,#dis_4,#dis_5,#invoice_price', function() {
+    // Bind function to relevant input fields
+    $('#arn-item-table').on('input', '#rec_quantity,#actual_cost', function() {
         calculatePayment();
     });
     
     // Also bind to change event for better compatibility
-    $('#arn-item-table').on('change', '#list_price,#rec_quantity,#dis_3,#dis_4,#dis_5,#invoice_price', function() {
-        calculatePayment();
-    });
-    
-    // Bind to disabled fields separately (they need special handling)
-    $('#arn-item-table').on('input change', '#dis_1,#dis_2', function() {
+    $('#arn-item-table').on('change', '#rec_quantity,#actual_cost', function() {
         calculatePayment();
     });
 
-    // When actual_cost is edited manually, calculate unit total and update discount
-    $('#actual_cost').on('input', function() {
-        const listPrice = parseFloat($('#list_price').val()) || 0;
-        const actualCost = parseFloat($(this).val()) || 0;
-        
-        // Validate that actual cost doesn't exceed list price
-        if (listPrice > 0 && actualCost > listPrice) {
-            $(this).addClass('is-invalid');
-            // Show warning but don't prevent input (user might be typing)
-            if ($(this).val().length > 0) {
-                $(this).attr('title', 'Actual Cost cannot exceed List Price (' + listPrice.toFixed(2) + ')');
-            }
-        } else {
-            $(this).removeClass('is-invalid');
-            $(this).removeAttr('title');
-        }
-        
-        // Calculate unit total with manually entered actual cost
-        calculatePayment(true);
-        
-        // Auto-adjust item discount (dis_2) based on actual cost
-        if (listPrice > 0 && actualCost <= listPrice) {
-            const discount = ((listPrice - actualCost) / listPrice) * 100;
-            $('#dis_2').val(discount.toFixed(2));
-        }
-    });
 
 
     $('#addItemBtn').on('click', function () {
@@ -414,20 +346,10 @@ jQuery(document).ready(function () {
             return;
         }
 
-        if (!listPrice || listPrice <= 0) {
-            swal({ title: "Error!", text: "Please enter List Price", type: "error", timer: 2000, showConfirmButton: false });
-            return;
-        }
-
     
 
         if (!InvoicePrice || InvoicePrice <= 0) {
             swal({ title: "Error!", text: "Please enter Selling Price", type: "error", timer: 2000, showConfirmButton: false });
-            return;
-        }
-
-        if (actualCost > listPrice) {
-            swal({ title: "Error!", text: "Actual Cost cannot exceed List Price", type: "error", timer: 2000, showConfirmButton: false });
             return;
         }
 
@@ -441,19 +363,19 @@ jQuery(document).ready(function () {
             <td><input type="number" name="items[][order_qty]" class="form-control form-control-sm" readonly></td>
             <td><input type="number" name="items[][rec_qty]" class="form-control form-control-sm" value="${recQty}" readonly></td>
             <td><input type="number" name="items[][list_price]" class="form-control form-control-sm" value="${listPrice.toFixed(2)}" readonly></td>
-            <td>
+            <td style="display: none;">
             <input type="number"  class="form-control form-control-sm" value="${dis1}" readonly>
             <input type="hidden" name="items[][dis6]" class="form-control form-control-sm" value="${dis6}" readonly>
             <input type="hidden" name="items[][dis7]" class="form-control form-control-sm" value="${dis7}" readonly>
             <input type="hidden" name="items[][dis8]" class="form-control form-control-sm" value="${dis8}" readonly>
             </td>
-            <td><input type="number" name="items[][dis2]" class="form-control form-control-sm" value="${dis2}" readonly></td>
-            <td><input type="number" name="items[][dis3]" class="form-control form-control-sm" value="${dis3}" readonly></td>
-            <td><input type="number" name="items[][dis4]" class="form-control form-control-sm" value="${dis4}" readonly></td>
-            <td><input type="number" name="items[][dis5]" class="form-control form-control-sm" value="${dis5}" readonly></td>
-            <td><input type="number" name="items[][actual_cost]" class="form-control form-control-sm" value="${actualCost.toFixed(2)}" readonly></td>
+            <td style="display: none;"><input type="number" name="items[][dis2]" class="form-control form-control-sm" value="${dis2}" readonly></td>
+            <td style="display: none;"><input type="number" name="items[][dis3]" class="form-control form-control-sm" value="${dis3}" readonly></td>
+            <td style="display: none;"><input type="number" name="items[][dis4]" class="form-control form-control-sm" value="${dis4}" readonly></td>
+            <td style="display: none;"><input type="number" name="items[][dis5]" class="form-control form-control-sm" value="${dis5}" readonly></td>
             <td><input type="number" name="items[][unit_total]" class="form-control form-control-sm" value="${unitTotal.toFixed(2)}" readonly></td>
             <td><input type="number" name="items[][invoice_price]" class="form-control form-control-sm" value="${InvoicePrice.toFixed(2)}" readonly></td>
+            <td><input type="number" name="items[][actual_cost]" class="form-control form-control-sm" value="${actualCost.toFixed(2)}" readonly></td>
             <td>
                 <div class="btn btn-danger btn-sm deleteRowBtn">
                     <i class="uil uil-trash-alt me-1"></i>
@@ -603,16 +525,17 @@ jQuery(document).ready(function () {
 
                                 <td><input type="number" name="items[${index}][rec_qty]" class="form-control form-control-sm" value="${item.rec_qty || 0}"></td>
                                 <td><input type="number" step="0.01" name="items[${index}][list_price]" class="form-control form-control-sm" value="${item.item_list_price || 0}"></td>
-                                <td><input type="number" step="0.01" name="items[${index}][brand_discount]" class="form-control form-control-sm me-1" value="${item.brand_discount || 0}" placeholder="D1"></td>
-                                <td><input type="number" step="0.01" name="items[${index}][item_discount]" class="form-control form-control-sm" value="${item.item_discount || 0}" placeholder="D2"></td>
-                                <td><input type="number" step="0.01" name="items[${index}][dis3]" class="form-control form-control-sm" value="${item.dis3 || 0}" placeholder="D3"></td>
-                                <td><input type="number" step="0.01" name="items[${index}][dis4]" class="form-control form-control-sm" value="${item.dis4 || 0}" placeholder="D4"></td>
-                                <td><input type="number" step="0.01" name="items[${index}][dis5]" class="form-control form-control-sm" value="${item.dis5 || 0}" placeholder="D5"></td>
+                                <td style="display: none;"><input type="number" step="0.01" name="items[${index}][brand_discount]" class="form-control form-control-sm me-1" value="${item.brand_discount || 0}" placeholder="D1"></td>
+                            <td style="display: none;"><input type="number" step="0.01" name="items[${index}][item_discount]" class="form-control form-control-sm" value="${item.item_discount || 0}" placeholder="D2"></td>
+                            <td style="display: none;"><input type="number" step="0.01" name="items[${index}][dis3]" class="form-control form-control-sm" value="${item.dis3 || 0}" placeholder="D3"></td>
+                            <td style="display: none;"><input type="number" step="0.01" name="items[${index}][dis4]" class="form-control form-control-sm" value="${item.dis4 || 0}" placeholder="D4"></td>
+                            <td style="display: none;"><input type="number" step="0.01" name="items[${index}][dis5]" class="form-control form-control-sm" value="${item.dis5 || 0}" placeholder="D5"></td>
                                 <td><input type="number" step="0.01" name="items[${index}][actual_cost]" class="form-control form-control-sm" value="${actualCost.toFixed(2)}"></td>
                                 <td><input type="number" step="0.01" name="items[${index}][unit_total]" class="form-control form-control-sm" value="${unitTotal.toFixed(2)}" readonly></td>
-                                <td><input type="number" step="0.01" name="items[${index}][list_price]" class="form-control form-control-sm" value="${item.item_selling_price}"></td>
+                                <td><input type="number" step="0.01" name="items[${index}][invoice_price]" class="form-control form-control-sm" value="${item.item_selling_price}"></td>
                                <td>
                                 <button class="btn btn-danger btn-sm deleteRowBtn">
+{{ ... }} 
                                     <i class="uil uil-trash-alt me-1"></i>
                                 </button>
                                 </td>
@@ -976,7 +899,6 @@ jQuery(document).ready(function () {
         }
 
         let items = [];
-        let hasInvalidItem = false;
     
         $('#itemTableBody tr').each(function () {
             if ($(this).attr('id') === 'noDataRow') return;
@@ -987,19 +909,7 @@ jQuery(document).ready(function () {
     
             const actualCost = parseFloat($(cols[9]).find('input').val()) || 0;
             const listPrice = parseFloat($(cols[3]).find('input').val()) || 0;
- 
-            // Validation: actualCost should not exceed listPrice
-            if (actualCost > listPrice) {
-                hasInvalidItem = true;
-                return swal({
-                    title: "Error!",
-                    text: `Actual cost cannot exceed List Price for item: ${$(cols[0]).text().trim()}`,
-                    type: "error",
-                    timer: 3000,
-                    showConfirmButton: false
-                });
-            }
-    
+
             items.push({
                 item_id: itemId,
                 code: $(cols[0]).text().trim(),
@@ -1014,13 +924,11 @@ jQuery(document).ready(function () {
                 dis3: parseFloat($(cols[6]).find("input").val()) || 0,
                 dis4: parseFloat($(cols[7]).find("input").val()) || 0,
                 dis5: parseFloat($(cols[8]).find("input").val()) || 0,
-                actual_cost: parseFloat($(cols[9]).find("input").val()) || 0,
-                unit_total: parseFloat($(cols[10]).find("input").val()) || 0,
-                invoice_price: parseFloat($(cols[11]).find("input").val()) || 0,
+                actual_cost: parseFloat($(cols[11]).find("input").val()) || 0,
+                unit_total: parseFloat($(cols[9]).find("input").val()) || 0,
+                invoice_price: parseFloat($(cols[10]).find("input").val()) || 0,
             });
         });
-    
-        if (hasInvalidItem) return;
     
         if (items.length === 0) {
             return swal({
@@ -1239,11 +1147,11 @@ jQuery(document).ready(function () {
                             <td><input type="number" name="items[][order_qty]" class="form-control form-control-sm" value="${item.order_qty}" readonly></td>
                             <td><input type="number" name="items[][rec_qty]" class="form-control form-control-sm" value="${item.received_qty}" readonly></td>
                             <td><input type="number" name="items[][dis2]" class="form-control form-control-sm" value="${item.list_price}" readonly></td>
-                            <td><input type="number" name="items[][dis3]" class="form-control form-control-sm" value="${dis1}" readonly></td>
-                            <td><input type="number" name="items[][dis4]" class="form-control form-control-sm" value="${item.discount_2 || 0}" readonly></td>
-                            <td><input type="number" name="items[][dis5]" class="form-control form-control-sm" value="${item.discount_3 || 0}" readonly></td>
-                            <td><input type="number" name="items[][dis6]" class="form-control form-control-sm" value="${item.discount_4 || 0}" readonly></td>
-                            <td><input type="number" name="items[][dis7]" class="form-control form-control-sm" value="${item.discount_5 || 0}" readonly></td>
+                            <td style="display: none;"><input type="number" name="items[][dis3]" class="form-control form-control-sm" value="${dis1}" readonly></td>
+                            <td style="display: none;"><input type="number" name="items[][dis4]" class="form-control form-control-sm" value="${item.discount_2 || 0}" readonly></td>
+                            <td style="display: none;"><input type="number" name="items[][dis5]" class="form-control form-control-sm" value="${item.discount_3 || 0}" readonly></td>
+                            <td style="display: none;"><input type="number" name="items[][dis6]" class="form-control form-control-sm" value="${item.discount_4 || 0}" readonly></td>
+                            <td style="display: none;"><input type="number" name="items[][dis7]" class="form-control form-control-sm" value="${item.discount_5 || 0}" readonly></td>
                             <td><input type="number" name="items[][actual_cost]" class="form-control form-control-sm" value="${item.final_cost}" readonly></td>
                             <td><input type="number" name="items[][unit_total]" class="form-control form-control-sm" value="${item.unit_total}" readonly></td>
                             <td><input type="number" name="items[][list_price]" class="form-control form-control-sm" value="${item.list_price}" readonly></td>
