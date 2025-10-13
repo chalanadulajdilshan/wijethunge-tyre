@@ -54,7 +54,7 @@ include './auth.php';
                                 </a> -->
                             <?php endif; ?>
 
-                            <a href="#" class="btn btn-info" id="print">
+                            <a href="#" class="btn btn-info" id="print" style="display: none;">
                                 <i class="uil uil-print me-1"></i> Print
                             </a>
 

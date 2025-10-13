@@ -210,7 +210,7 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                     </tr>
                                 <?php } ?>
                                 <tr>
-                                    <td colspan="5" rowspan="3" style="vertical-align:top;  ">
+                                    <td colspan="5" rowspan="5" style="vertical-align:top;  ">
                                         <h6 style="margin-top:8px;"><strong>Terms & Conditions:</strong></h6>
                                         <ul style="padding-left:20px;margin-bottom:0;">
                                             <?php
@@ -229,6 +229,16 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                     <td colspan="2" class="text-end font-weight-bold"><strong>Gross Amount:-</strong></td>
                                     <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($subtotal, 2); ?></strong></td>
                                 </tr>
+                                <?php if ($SALES_INVOICE->payment_type == 2): // Credit payment ?>
+                                <tr>
+                                    <td colspan="2" class="text-end font-weight-bold"><strong>Paid Amount:-</strong></td>
+                                    <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end font-weight-bold"><strong>Payable Amount:-</strong></td>
+                                    <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->grand_total - $SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
+                                </tr>
+                                <?php endif; ?>
                                 <tr hidden>
                                     <td colspan="2" class="text-end font-weight-bold">Discount:-</td>
                                     <td colspan="2" class="text-end font-weight-bold">- <?php echo number_format($total_discount, 2); ?></td>
@@ -335,7 +345,7 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                     </tr>
                                 <?php } ?>
                                 <tr>
-                                    <td colspan="5" rowspan="3" style="vertical-align:top;">
+                                    <td colspan="5" rowspan="5" style="vertical-align:top;">
                                         <h6 style="margin-top:8px;"><strong>Terms & Conditions:</strong></h6>
                                         <ul style="padding-left:20px;margin-bottom:0;">
                                             <?php
@@ -354,6 +364,16 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                     <td colspan="2" class="text-end font-weight-bold"><strong>Gross Amount:-</strong></td>
                                     <td class="text-end font-weight-bold"><strong><?php echo number_format($subtotal, 2); ?></strong></td>
                                 </tr>
+                                <?php if ($SALES_INVOICE->payment_type == 2): // Credit payment ?>
+                                <tr>
+                                    <td colspan="2" class="text-end font-weight-bold"><strong>Paid Amount:-</strong></td>
+                                    <td class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end font-weight-bold"><strong>Payable Amount:-</strong></td>
+                                    <td class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->grand_total - $SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
+                                </tr>
+                                <?php endif; ?>
                                 <tr>
                                     <td colspan="2" class="text-end font-weight-bold">Total Cost:-</td>
                                     <td class="text-end font-weight-bold"><?php echo number_format($total_cost, 2); ?></td>

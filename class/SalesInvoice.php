@@ -463,13 +463,13 @@ class SalesInvoice
         $db = new Database();
         $keyword = $db->escapeString($keyword);
 
-        $query = "SELECT si.* 
+        $query = "SELECT si.*, dm.name as department_name 
                   FROM `sales_invoice` si
                   LEFT JOIN `customer_master` c ON si.customer_id = c.id
-                  LEFT JOIN `department_master` d ON si.department_id = d.id
+                  LEFT JOIN `department_master` dm ON si.department_id = dm.id
                   WHERE si.invoice_no LIKE '%$keyword%'
                      OR c.name LIKE '%$keyword%'
-                     OR d.name LIKE '%$keyword%'
+                     OR dm.name LIKE '%$keyword%'
                   ORDER BY si.id DESC
                   LIMIT 50";
 
