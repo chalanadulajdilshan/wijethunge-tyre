@@ -164,8 +164,8 @@ jQuery(document).ready(function () {
             { data: "code", title: "Code" },
             { data: "name", title: "Name" },
             { data: "brand", title: "Brand" }, 
-            { data: "list_price", title: "List Price" },
-            { data: "invoice_price", title: "Invoice Price" },
+            { data: "list_price", title: "Customer Price" },
+            { data: "invoice_price", title: "Dealer Price" },
             { data: "qty", title: "Quantity" }, 
             { data: "status_label", title: "Status" }
         ],
@@ -267,7 +267,7 @@ jQuery(document).ready(function () {
         } else if (!$('#list_price').val() || $('#list_price').val().length === 0) {
             swal({
                 title: "Error!",
-                text: "Please select item invoice price",
+                text: "Please enter customer price",
                 type: 'error',
                 timer: 2000,
                 showConfirmButton: false
@@ -275,7 +275,7 @@ jQuery(document).ready(function () {
         } else if (!$('#invoice_price').val() || $('#invoice_price').val().length === 0) {
             swal({
                 title: "Error!",
-                text: "Please select item invoice price",
+                text: "Please enter dealer price",
                 type: 'error',
                 timer: 2000,
                 showConfirmButton: false
@@ -387,7 +387,7 @@ jQuery(document).ready(function () {
         } else if (!$('#list_price').val() || $('#list_price').val().length === 0) {
             swal({
                 title: "Error!",
-                text: "Please select item invoice price",
+                text: "Please enter customer price",
                 type: 'error',
                 timer: 2000,
                 showConfirmButton: false
@@ -395,7 +395,7 @@ jQuery(document).ready(function () {
         } else if (!$('#invoice_price').val() || $('#invoice_price').val().length === 0) {
             swal({
                 title: "Error!",
-                text: "Please select item invoice price",
+                text: "Please enter dealer price",
                 type: 'error',
                 timer: 2000,
                 showConfirmButton: false
