@@ -109,6 +109,81 @@ class ItemMaster
         return $db->readQuery($query);
     }
 
+    public function bulkInsert($items, $skipDuplicates = true)
+    {
+        $db = new Database();
+        $insertedCount = 0;
+        $skippedCount = 0;
+        $errors = [];
+
+        foreach ($items as $index => $item) {
+            try {
+                // Validate required fields
+                if (empty($item['name']) || empty($item['size']) || 
+                    empty($item['group']) || empty($item['category']) || empty($item['customer_price']) || 
+                    empty($item['dealer_price']) || empty($item['re_order_qty']) || empty($item['stock_type'])) {
+                    $errors[] = "Row " . ($index + 2) . ": Missing required fields";
+                    continue;
+                }
+
+                // Check for duplicates if skipDuplicates is enabled
+                if ($skipDuplicates) {
+                    $escapedName = mysqli_real_escape_string($db->DB_CON, trim($item['name']));
+                    $checkQuery = "SELECT id FROM item_master WHERE UPPER(TRIM(name)) = UPPER(TRIM('$escapedName')) LIMIT 1";
+                    $checkResult = $db->readQuery($checkQuery);
+                    if (mysqli_num_rows($checkResult) > 0) {
+                        $skippedCount++;
+                        continue;
+                    }
+                }
+
+                // Create new ItemMaster instance
+                $newItem = new ItemMaster();
+                $newItem->code = !empty($item['code']) ? $item['code'] : $this->generateItemCode();
+                $newItem->name = trim($item['name']);
+                $newItem->brand = (int)$item['brand'];
+                $newItem->size = trim($item['size']);
+                $newItem->pattern = !empty($item['pattern']) ? trim($item['pattern']) : '';
+                $newItem->group = (int)$item['group'];
+                $newItem->category = (int)$item['category'];
+                $newItem->customer_price = (float)$item['customer_price'];
+                $newItem->dealer_price = (float)$item['dealer_price'];
+                $newItem->re_order_level = !empty($item['re_order_level']) ? (int)$item['re_order_level'] : 0;
+                $newItem->re_order_qty = (int)$item['re_order_qty'];
+                $newItem->stock_type = (int)$item['stock_type'];
+                $newItem->note = !empty($item['note']) ? trim($item['note']) : '';
+                $newItem->discount = !empty($item['discount']) ? (float)$item['discount'] : 0;
+                $newItem->is_active = isset($item['is_active']) ? (int)$item['is_active'] : 1;
+
+                $result = $newItem->create();
+                if ($result) {
+                    $insertedCount++;
+                } else {
+                    $errors[] = "Row " . ($index + 2) . ": Failed to insert item";
+                }
+            } catch (Exception $e) {
+                $errors[] = "Row " . ($index + 2) . ": " . $e->getMessage();
+            }
+        }
+
+        return [
+            'inserted' => $insertedCount,
+            'skipped' => $skippedCount,
+            'errors' => $errors
+        ];
+    }
+
+    private function generateItemCode()
+    {
+        // Get the last item ID and generate a new code
+        $db = new Database();
+        $query = "SELECT MAX(id) as max_id FROM item_master";
+        $result = $db->readQuery($query);
+        $row = mysqli_fetch_array($result);
+        $nextId = ($row['max_id'] ?? 0) + 1;
+        return 'TI/0' . $nextId;
+    }
+
     public function all()
     {
         $query = "SELECT * FROM `item_master` ORDER BY name ASC";

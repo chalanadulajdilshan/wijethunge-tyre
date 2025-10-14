@@ -438,3 +438,357 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_stock_tmp_by_item') {
     }
     exit();
 }
+
+// Debug endpoint to show available brand IDs
+if (isset($_POST['action']) && $_POST['action'] === 'debug_brands') {
+    try {
+        $db = new Database();
+        $brandQuery = "SELECT id, name FROM brands ORDER BY id ASC";
+        $result = $db->readQuery($brandQuery);
+        
+        $brands = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $brands[] = $row;
+        }
+        
+        echo json_encode(['status' => 'success', 'brands' => $brands]);
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit();
+}
+
+// Debug endpoint to show available group IDs
+if (isset($_POST['action']) && $_POST['action'] === 'debug_groups') {
+    try {
+        $db = new Database();
+        $groupQuery = "SELECT id, name FROM group_master ORDER BY id ASC";
+        $result = $db->readQuery($groupQuery);
+        
+        $groups = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $groups[] = $row;
+        }
+        
+        echo json_encode(['status' => 'success', 'groups' => $groups]);
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit();
+}
+
+// Debug endpoint to show available category IDs
+if (isset($_POST['action']) && $_POST['action'] === 'debug_categories') {
+    try {
+        $db = new Database();
+        $categoryQuery = "SELECT id, name FROM category_master ORDER BY id ASC";
+        $result = $db->readQuery($categoryQuery);
+        
+        $categories = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $categories[] = $row;
+        }
+        
+        echo json_encode(['status' => 'success', 'categories' => $categories]);
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit();
+}
+
+// Debug endpoint to show available stock type IDs
+if (isset($_POST['action']) && $_POST['action'] === 'debug_stock_types') {
+    try {
+        $db = new Database();
+        $stockTypeQuery = "SELECT id, name FROM stock_type ORDER BY id ASC";
+        $result = $db->readQuery($stockTypeQuery);
+        
+        $stock_types = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $stock_types[] = $row;
+        }
+        
+        echo json_encode(['status' => 'success', 'stock_types' => $stock_types]);
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit();
+}
+
+// Handle Excel file upload
+if (isset($_POST['upload_excel']) && isset($_FILES['excelFile'])) {
+    try {
+        $uploadedFile = $_FILES['excelFile'];
+        $skipDuplicates = isset($_POST['skipDuplicates']) ? (bool)$_POST['skipDuplicates'] : true;
+        
+        // Validate file
+        if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('File upload error');
+        }
+        
+        $fileExtension = strtolower(pathinfo($uploadedFile['name'], PATHINFO_EXTENSION));
+        if (!in_array($fileExtension, ['xlsx', 'xls', 'csv'])) {
+            throw new Exception('Invalid file format. Please upload Excel (.xlsx, .xls) or CSV file');
+        }
+        
+        // Move uploaded file to temporary location
+        $tempFile = sys_get_temp_dir() . '/' . uniqid() . '.' . $fileExtension;
+        if (!move_uploaded_file($uploadedFile['tmp_name'], $tempFile)) {
+            throw new Exception('Failed to process uploaded file');
+        }
+        
+        $items = [];
+        
+        // Process CSV file (simplified approach)
+        if ($fileExtension === 'csv') {
+            $items = parseCSVFile($tempFile);
+        } else {
+            // Convert Excel to CSV for processing (simple approach)
+            throw new Exception('Excel files not supported yet. Please save your file as CSV format and upload again.');
+        }
+        
+        if (empty($items)) {
+            throw new Exception('No valid data found in the uploaded file');
+        }
+        
+        // Process items with ItemMaster
+        $itemMaster = new ItemMaster();
+        $result = $itemMaster->bulkInsert($items, $skipDuplicates);
+        
+        // Clean up temporary file
+        unlink($tempFile);
+        
+        $message = "Successfully processed {$result['inserted']} items";
+        if ($result['skipped'] > 0) {
+            $message .= ", skipped {$result['skipped']} duplicates";
+        }
+        if (!empty($result['errors'])) {
+            $message .= ". Errors: " . implode('; ', array_slice($result['errors'], 0, 3));
+            if (count($result['errors']) > 3) {
+                $message .= " and " . (count($result['errors']) - 3) . " more...";
+            }
+        }
+        
+        echo json_encode([
+            'status' => 'success',
+            'message' => $message,
+            'details' => $result
+        ]);
+        
+    } catch (Exception $e) {
+        // Clean up temporary file if it exists
+        if (isset($tempFile) && file_exists($tempFile)) {
+            unlink($tempFile);
+        }
+        
+        echo json_encode([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit();
+}
+
+function parseCSVFile($filePath) {
+    $items = [];
+    $handle = fopen($filePath, 'r');
+    
+    if ($handle === false) {
+        throw new Exception('Cannot read CSV file');
+    }
+    
+    // Read header row
+    $headers = fgetcsv($handle);
+    if (!$headers) {
+        fclose($handle);
+        throw new Exception('Invalid CSV format - no headers found');
+    }
+    
+    // Map headers to expected fields (case-insensitive)
+    $headerMap = mapHeaders($headers);
+    
+    $rowIndex = 1;
+    while (($row = fgetcsv($handle)) !== false) {
+        $rowIndex++;
+        if (count($row) < count($headers)) {
+            continue; // Skip incomplete rows
+        }
+        
+        $item = [];
+        foreach ($headerMap as $csvIndex => $fieldName) {
+            $item[$fieldName] = isset($row[$csvIndex]) ? trim($row[$csvIndex]) : '';
+        }
+        
+        // Validate and convert data types
+        $processedItem = processItemData($item, $rowIndex);
+        if ($processedItem) {
+            $items[] = $processedItem;
+        }
+    }
+    
+    fclose($handle);
+    return $items;
+}
+
+function mapHeaders($headers) {
+    $headerMap = [];
+    $fieldMappings = [
+        'code' => ['code', 'item_code', 'item code', 'product_code'],
+        'name' => ['name', 'item_name', 'item name', 'product_name', 'product name'],
+        'brand' => ['brand', 'brand_id', 'brand id', 'manufacturer'],
+        'size' => ['size', 'item_size', 'item size'],
+        'pattern' => ['pattern', 'item_pattern', 'item pattern'],
+        'group' => ['group', 'group_id', 'group id', 'item_group'],
+        'category' => ['category', 'category_id', 'category id', 'item_category'],
+        'customer_price' => ['customer_price', 'customer price', 'list_price', 'list price', 'price'],
+        'dealer_price' => ['dealer_price', 'dealer price', 'invoice_price', 'invoice price', 'wholesale_price'],
+        're_order_level' => ['re_order_level', 'reorder_level', 'reorder level', 'minimum_stock'],
+        're_order_qty' => ['re_order_qty', 'reorder_qty', 'reorder quantity', 'reorder_quantity'],
+        'stock_type' => ['stock_type', 'stock type', 'stock_type_id'],
+        'note' => ['note', 'notes', 'description', 'remarks'],
+        'discount' => ['discount', 'discount_percent', 'discount %'],
+        'is_active' => ['is_active', 'active', 'status']
+    ];
+    
+    foreach ($headers as $index => $header) {
+        $normalizedHeader = strtolower(trim($header));
+        foreach ($fieldMappings as $field => $possibleNames) {
+            if (in_array($normalizedHeader, $possibleNames)) {
+                $headerMap[$index] = $field;
+                break;
+            }
+        }
+    }
+    
+    return $headerMap;
+}
+
+function processItemData($item, $rowIndex) {
+    // Skip empty rows
+    if (empty($item['name'])) {
+        return null;
+    }
+    
+    // Get database references for lookups
+    $db = new Database();
+    
+    // Handle brand - accept ID directly, lookup by name, or extract from item name
+    if (!empty($item['brand'])) {
+        if (is_numeric($item['brand'])) {
+            // Validate that the brand ID exists
+            $brandId = (int)$item['brand'];
+            $brandCheckQuery = "SELECT id FROM brands WHERE id = $brandId LIMIT 1";
+            $brandCheckResult = $db->readQuery($brandCheckQuery);
+            if (!mysqli_fetch_assoc($brandCheckResult)) {
+                throw new Exception("Row $rowIndex: Brand ID '{$item['brand']}' does not exist");
+            }
+            $item['brand'] = $brandId;
+        } else {
+            // Look up by name
+            $brandName = mysqli_real_escape_string($db->DB_CON, $item['brand']);
+            $brandQuery = "SELECT id FROM brands WHERE UPPER(name) = UPPER('$brandName') LIMIT 1";
+            $brandResult = $db->readQuery($brandQuery);
+            if ($brandRow = mysqli_fetch_assoc($brandResult)) {
+                $item['brand'] = $brandRow['id'];
+            } else {
+                throw new Exception("Row $rowIndex: Brand '{$item['brand']}' not found");
+            }
+        }
+    } elseif (!empty($item['name'])) {
+        // If brand is empty, try to extract it from the first word of item name
+        $nameParts = explode(' ', trim($item['name']));
+        $potentialBrand = $nameParts[0];
+        
+        if (!empty($potentialBrand)) {
+            // Look up the extracted brand name
+            $brandName = mysqli_real_escape_string($db->DB_CON, $potentialBrand);
+            $brandQuery = "SELECT id FROM brands WHERE UPPER(name) = UPPER('$brandName') LIMIT 1";
+            $brandResult = $db->readQuery($brandQuery);
+            if ($brandRow = mysqli_fetch_assoc($brandResult)) {
+                $item['brand'] = $brandRow['id'];
+            } else {
+                throw new Exception("Row $rowIndex: Could not find brand '{$potentialBrand}' extracted from item name '{$item['name']}'");
+            }
+        }
+    }
+    
+    // Handle group - accept ID directly or lookup by name
+    if (!empty($item['group'])) {
+        if (is_numeric($item['group'])) {
+            // Validate that the group ID exists
+            $groupId = (int)$item['group'];
+            $groupCheckQuery = "SELECT id FROM group_master WHERE id = $groupId LIMIT 1";
+            $groupCheckResult = $db->readQuery($groupCheckQuery);
+            if (!mysqli_fetch_assoc($groupCheckResult)) {
+                throw new Exception("Row $rowIndex: Group ID '{$item['group']}' does not exist");
+            }
+            $item['group'] = $groupId;
+        } else {
+            // Look up by name
+            $groupName = mysqli_real_escape_string($db->DB_CON, $item['group']);
+            $groupQuery = "SELECT id FROM group_master WHERE UPPER(name) = UPPER('$groupName') LIMIT 1";
+            $groupResult = $db->readQuery($groupQuery);
+            if ($groupRow = mysqli_fetch_assoc($groupResult)) {
+                $item['group'] = $groupRow['id'];
+            } else {
+                throw new Exception("Row $rowIndex: Group '{$item['group']}' not found");
+            }
+        }
+    }
+    
+    // Handle category - accept ID directly or lookup by name
+    if (!empty($item['category'])) {
+        if (is_numeric($item['category'])) {
+            // Validate that the category ID exists
+            $categoryId = (int)$item['category'];
+            $categoryCheckQuery = "SELECT id FROM category_master WHERE id = $categoryId LIMIT 1";
+            $categoryCheckResult = $db->readQuery($categoryCheckQuery);
+            if (!mysqli_fetch_assoc($categoryCheckResult)) {
+                throw new Exception("Row $rowIndex: Category ID '{$item['category']}' does not exist");
+            }
+            $item['category'] = $categoryId;
+        } else {
+            // Look up by name
+            $categoryName = mysqli_real_escape_string($db->DB_CON, $item['category']);
+            $categoryQuery = "SELECT id FROM category_master WHERE UPPER(name) = UPPER('$categoryName') LIMIT 1";
+            $categoryResult = $db->readQuery($categoryQuery);
+            if ($categoryRow = mysqli_fetch_assoc($categoryResult)) {
+                $item['category'] = $categoryRow['id'];
+            } else {
+                throw new Exception("Row $rowIndex: Category '{$item['category']}' not found");
+            }
+        }
+    }
+    
+    // Handle stock type - accept ID directly or lookup by name
+    if (!empty($item['stock_type'])) {
+        if (is_numeric($item['stock_type'])) {
+            // Validate that the stock type ID exists
+            $stockTypeId = (int)$item['stock_type'];
+            $stockTypeCheckQuery = "SELECT id FROM stock_type WHERE id = $stockTypeId LIMIT 1";
+            $stockTypeCheckResult = $db->readQuery($stockTypeCheckQuery);
+            if (!mysqli_fetch_assoc($stockTypeCheckResult)) {
+                throw new Exception("Row $rowIndex: Stock Type ID '{$item['stock_type']}' does not exist");
+            }
+            $item['stock_type'] = $stockTypeId;
+        } else {
+            // Look up by name
+            $stockTypeName = mysqli_real_escape_string($db->DB_CON, $item['stock_type']);
+            $stockTypeQuery = "SELECT id FROM stock_type WHERE UPPER(name) = UPPER('$stockTypeName') LIMIT 1";
+            $stockTypeResult = $db->readQuery($stockTypeQuery);
+            if ($stockTypeRow = mysqli_fetch_assoc($stockTypeResult)) {
+                $item['stock_type'] = $stockTypeRow['id'];
+            } else {
+                throw new Exception("Row $rowIndex: Stock Type '{$item['stock_type']}' not found");
+            }
+        }
+    }
+    
+    // Convert active status
+    if (isset($item['is_active'])) {
+        $activeValue = strtolower(trim($item['is_active']));
+        $item['is_active'] = in_array($activeValue, ['1', 'true', 'yes', 'active', 'y']) ? 1 : 0;
+    }
+    
+    return $item;
+}
