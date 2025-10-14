@@ -555,6 +555,12 @@ if (isset($_POST['upload_excel']) && isset($_FILES['excelFile'])) {
         $itemMaster = new ItemMaster();
         $result = $itemMaster->bulkInsert($items, $skipDuplicates);
         
+        // Update document tracking with the number of items inserted
+        if ($result['inserted'] > 0) {
+            $DOCUMENT_TRACKING = new DocumentTracking(null);
+            $DOCUMENT_TRACKING->incrementDocumentId('item', $result['inserted']);
+        }
+        
         // Clean up temporary file
         unlink($tempFile);
         

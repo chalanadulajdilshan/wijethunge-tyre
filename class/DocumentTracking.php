@@ -126,7 +126,7 @@ class DocumentTracking
     }
 
     //update Ids
-    public function incrementDocumentId($type)
+    public function incrementDocumentId($type, $incrementBy = 1)
     {
         $db = new Database();
 
@@ -157,7 +157,7 @@ class DocumentTracking
         $row = mysqli_fetch_array($result);
 
         if ($row) {
-            $new_id = (int) $row[$column] + 1;
+            $new_id = (int) $row[$column] + (int) $incrementBy;
 
             $update_query = "UPDATE `document_tracking` SET 
                             `$column` = '$new_id',
