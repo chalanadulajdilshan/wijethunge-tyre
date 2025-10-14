@@ -56,10 +56,17 @@ $item_id = 'TI/0' . ($lastId + 1);
                                     <i class="uil uil-edit me-1"></i> Update
                                 </a>
                             <?php endif; ?>
-
                             <?php if ($PERMISSIONS['delete_page']): ?>
                                 <a href="#" class="btn btn-danger delete-item">
                                     <i class="uil uil-trash-alt me-1"></i> Delete
+                                </a>
+                            <?php endif; ?>
+                            <?php if ($PERMISSIONS['add_page']): ?>
+                                <a href="#" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#excelUploadModal">
+                                    <i class="uil uil-upload me-1"></i> Upload Excel
+                                </a>
+                                <a href="sample-items-template.csv" class="btn btn-secondary" download>
+                                    <i class="uil uil-download-alt me-1"></i> Download CSV Template
                                 </a>
                             <?php endif; ?>
                         </div>
@@ -298,10 +305,53 @@ $item_id = 'TI/0' . ($lastId + 1);
             </div>
             <?php include 'footer.php' ?>
 
+
         </div>
     </div>
 
-
+    <!-- Excel Upload Modal -->
+    <div class="modal fade" id="excelUploadModal" tabindex="-1" aria-labelledby="excelUploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="excelUploadModalLabel">Upload Items from Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="excelUploadForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="excelFile" class="form-label">Select CSV File</label>
+                            <input type="file" class="form-control" id="excelFile" name="excelFile" accept=".csv,.xlsx,.xls" required>
+                            <div class="form-text">
+                                <strong>Supported formats:</strong> CSV (.csv), Excel (.xlsx, .xls)<br>
+                                <strong>Note:</strong> Excel files will need to be converted to CSV format. For best results, use CSV format.<br>
+                                <strong>Brand/Group/Category/Stock Type:</strong> You can use either ID numbers (1, 2, 3...) or names (MICHELIN, TYRE, etc.)<br>
+                                <strong>Auto Brand Extraction:</strong> If brand column is empty, system extracts from first word of item name (e.g., "MICHELIN 195/65R15" → "MICHELIN")<br>
+                                <strong>To find correct IDs:</strong> Visit <a href="debug-ids.php" target="_blank">debug-ids.php</a> to see all available IDs (brands, groups, categories, stock types) in your database.<br>
+                                <a href="sample-items-template-detailed.csv" download class="text-primary">Download detailed template with instructions</a>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="skipDuplicates" name="skipDuplicates" checked>
+                                <label class="form-check-label" for="skipDuplicates">
+                                    Skip duplicate items (based on item name)
+                                </label>
+                            </div>
+                        </div>
+                        <div id="uploadProgress" class="progress mb-3" style="display: none;">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="uploadResult" class="alert" style="display: none;"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="uploadExcelBtn">Upload Items</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Right bar overlay-->
     <div class="rightbar-overlay"></div>
@@ -331,6 +381,68 @@ $item_id = 'TI/0' . ($lastId + 1);
 
             // Initialize on page load
             updateItemName();
+
+            // Excel upload functionality
+            $('#uploadExcelBtn').click(function() {
+                const formData = new FormData();
+                const fileInput = $('#excelFile')[0];
+                
+                if (!fileInput.files[0]) {
+                    alert('Please select an Excel file');
+                    return;
+                }
+                
+                formData.append('excelFile', fileInput.files[0]);
+                formData.append('skipDuplicates', $('#skipDuplicates').is(':checked') ? 1 : 0);
+                formData.append('upload_excel', 1);
+                
+                $('#uploadProgress').show();
+                $('#uploadResult').hide();
+                $('#uploadExcelBtn').prop('disabled', true);
+                
+                $.ajax({
+                    url: 'ajax/php/item-master.php',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    xhr: function() {
+                        const xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener('progress', function(evt) {
+                            if (evt.lengthComputable) {
+                                const percentComplete = evt.loaded / evt.total * 100;
+                                $('.progress-bar').css('width', percentComplete + '%');
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    success: function(response) {
+                        $('#uploadProgress').hide();
+                        $('#uploadExcelBtn').prop('disabled', false);
+                        
+                        if (response.status === 'success') {
+                            $('#uploadResult').removeClass('alert-danger').addClass('alert-success').html(
+                                '<strong>Success!</strong> ' + response.message
+                            ).show();
+                            setTimeout(() => {
+                                $('#excelUploadModal').modal('hide');
+                                location.reload();
+                            }, 2000);
+                        } else {
+                            $('#uploadResult').removeClass('alert-success').addClass('alert-danger').html(
+                                '<strong>Error!</strong> ' + response.message
+                            ).show();
+                        }
+                    },
+                    error: function() {
+                        $('#uploadProgress').hide();
+                        $('#uploadExcelBtn').prop('disabled', false);
+                        $('#uploadResult').removeClass('alert-success').addClass('alert-danger').html(
+                            '<strong>Error!</strong> Failed to upload file'
+                        ).show();
+                    }
+                });
+            });
         });
     </script>
 

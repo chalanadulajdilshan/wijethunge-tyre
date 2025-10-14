@@ -1,0 +1,4 @@
+code,name,brand,size,pattern,group,category,customer_price,dealer_price,re_order_level,re_order_qty,stock_type,note,discount,is_active
+TI/001,MICHELIN 195/65R15 ENERGY XM2,1,195/65R15,ENERGY XM2,1,1,12500.00,10000.00,5,10,1,High quality passenger tyre,0,1
+TI/002,BRIDGESTONE 205/55R16 TURANZA T001,2,205/55R16,TURANZA T001,1,1,15000.00,12000.00,3,8,1,Premium touring tyre,5,1
+TI/003,CONTINENTAL 225/45R17 PREMIUMCONTACT 6,3,225/45R17,PREMIUMCONTACT 6,1,2,18500.00,15000.00,2,6,1,High performance tyre,0,1

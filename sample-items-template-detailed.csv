@@ -1,0 +1,28 @@
+# ITEM MASTER UPLOAD TEMPLATE
+# Instructions:
+# 1. Fill in the data starting from the row after the instructions (look for the header row)
+# 2. Required fields: name, size, group, category, customer_price, dealer_price, re_order_qty, stock_type
+#    (brand is optional - will be extracted from item name if empty)
+# 3. You can use either ID numbers or names for: brand, group, category, stock_type
+# 4. For is_active column: use 1/true/yes/active for active items, 0/false/no/inactive for inactive
+# 5. Save this file and upload it using the Upload Excel button
+# 6. Delete these instruction rows before uploading
+#
+# IMPORTANT: Check debug-ids.php to see actual IDs in your database!
+# This page shows brands, groups, categories, and stock types with their correct IDs.
+#
+# BRAND EXTRACTION: If you leave the brand column empty, the system will automatically
+# extract the brand from the FIRST WORD of the item name.
+# For example: "MICHELIN 195/65R15 ENERGY XM2" → brand = "MICHELIN"
+#
+# ID REFERENCE EXAMPLES (replace with your actual IDs):
+# Brand IDs: Check debug-brands.php for actual IDs in your database
+# Group IDs: 1=TYRE, 2=TUBE, 3=FLAP, etc. (check your database)
+# Category IDs: 1=PASSENGER, 2=PERFORMANCE, 3=TRUCK, etc. (check your database)
+# Stock Type IDs: 1=STOCK, 2=NON-STOCK, etc. (check your database)
+#
+# Sample data below (showing both ID and name formats):
+code,name,brand,size,pattern,group,category,customer_price,dealer_price,re_order_level,re_order_qty,stock_type,note,discount,is_active
+TI/001,MICHELIN 195/65R15 ENERGY XM2,,195/65R15,ENERGY XM2,1,1,12500.00,10000.00,5,10,1,High quality passenger tyre,0,1
+TI/002,BRIDGESTONE 205/55R16 TURANZA T001,2,205/55R16,TURANZA T001,TYRE,PASSENGER,15000.00,12000.00,3,8,STOCK,Premium touring tyre,5,1
+TI/003,CONTINENTAL 225/45R17 PREMIUMCONTACT 6,3,225/45R17,PREMIUMCONTACT 6,1,PERFORMANCE,18500.00,15000.00,2,6,1,High performance tyre,0,1
