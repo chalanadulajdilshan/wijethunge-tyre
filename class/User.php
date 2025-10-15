@@ -272,7 +272,7 @@ class User
 
         if (!isset($_SESSION)) {
             session_start([
-                'cookie_lifetime' => 3200,
+                'cookie_lifetime' => 18000,
             ]);
         }
 
