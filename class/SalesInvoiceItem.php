@@ -9,8 +9,9 @@ class SalesInvoiceItem
     public $item_name;
     public $quantity;
     public $cost;
-    public $list_price;
     public $price;
+    public $customer_price;
+    public $dealer_price;
     public $discount;
     public $total;
     public $vehicle_no;
@@ -36,8 +37,9 @@ class SalesInvoiceItem
                 $this->quantity = $result['quantity'];
                 $this->discount = $result['discount'];
                 $this->cost = $result['cost'];
-                $this->list_price = $result['list_price'] ?? $result['price']; // Fallback for existing records
-                $this->price = $result['price'];
+                $this->price = $result['price'] ?? 0;
+                $this->customer_price = $result['customer_price'] ?? $result['list_price']; // Fallback for existing records
+                $this->dealer_price = $result['dealer_price'] ?? $result['price']; // Fallback for existing records
                 $this->total = $result['total'];
                 $this->vehicle_no = $result['vehicle_no'] ?? '';
                 $this->current_km = $result['current_km'] ?? '';
@@ -52,15 +54,16 @@ class SalesInvoiceItem
 
 
         $query = "INSERT INTO `sales_invoice_items` 
-    (`invoice_id`, `item_code`, `service_item_code`, `item_name`,`cost`, `list_price`, `price`, `discount`,`quantity`, `total`, `vehicle_no`, `current_km`, `next_service_date`, `created_at`) 
+    (`invoice_id`, `item_code`, `service_item_code`, `item_name`,`cost`, `price`, `customer_price`, `dealer_price`, `discount`,`quantity`, `total`, `vehicle_no`, `current_km`, `next_service_date`, `created_at`) 
     VALUES (
         '{$this->invoice_id}', 
         '{$this->item_code}', 
         '{$this->service_item_code}', 
         '{$this->item_name}', 
         '{$this->cost}', 
-        '{$this->list_price}', 
         '{$this->price}', 
+        '{$this->customer_price}', 
+        '{$this->dealer_price}', 
         '{$this->discount}', 
         '{$this->quantity}', 
         '{$this->total}',
@@ -90,6 +93,7 @@ class SalesInvoiceItem
             `service_item_code` = '{$this->service_item_code}', 
             `item_name` = '{$this->item_name}', 
             `price` = '{$this->price}', 
+            `dealer_price` = '{$this->dealer_price}', 
             `quantity` = '{$this->quantity}', 
             `total` = '{$this->total}' 
             WHERE `id` = '{$this->id}'";
@@ -166,6 +170,11 @@ class SalesInvoiceItem
             
             // Extract clean item name for display (remove ARN metadata)
             $row['display_name'] = $this->extractCleanItemName($row['item_name']);
+            
+            // Ensure price field is available with fallback
+            if (!isset($row['price']) || $row['price'] === null) {
+                $row['price'] = $row['customer_price'] ?? $row['dealer_price'] ?? 0;
+            }
             
             // Add vehicle no and current km to display name if they exist
             if (!empty($row['vehicle_no']) || !empty($row['current_km'])) {

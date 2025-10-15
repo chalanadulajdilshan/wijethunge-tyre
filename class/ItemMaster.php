@@ -307,8 +307,8 @@ class ItemMaster
                 });
 
                 $row['stock_tmp'][$key]['final_cost'] = $stockRow['cost']; // Assuming 'cost' = final cost
-                $row['stock_tmp'][$key]['list_price'] = $stockRow['list_price'];
-                $row['stock_tmp'][$key]['invoice_price'] = $stockRow['invoice_price'];
+                $row['stock_tmp'][$key]['customer_price'] = $stockRow['customer_price'];
+                $row['stock_tmp'][$key]['dealer_price'] = $stockRow['dealer_price'];
 
                 // Department
                 $DEPARTMENT_MASTER = new DepartmentMaster($stockRow['department_id']);

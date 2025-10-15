@@ -49,9 +49,9 @@ include './auth.php';
                             <?php endif; ?>
 
                             <?php if ($PERMISSIONS['edit_page']): ?>
-                                <!-- <a href="#" class="btn btn-warning" id="update" style="display: none;">
+                                <a href="#" class="btn btn-warning" id="update">
                                     <i class="uil uil-edit me-1"></i> Update
-                                </a> -->
+                                </a>
                             <?php endif; ?>
 
                             <a href="#" class="btn btn-info" id="print" style="display: none;">
@@ -209,7 +209,7 @@ include './auth.php';
 
 
 
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <label for="customerName" class="form-label">Customer Name <span class="text-danger">*</span></label>
                                                 <div class="input-group mb-3">
                                                     <input id="customer_name" name="customer_name" type="text"
@@ -242,7 +242,7 @@ include './auth.php';
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-1">
+                                            <div class="col-md-1" style="display: none;">
                                                 <label for="vat_type" class="form-label">Vat Type</label>
                                                 <div class="input-group mb-3">
                                                     <select id="vat_type" name="vat_type" class="form-select">
@@ -258,7 +258,7 @@ include './auth.php';
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-2">
+                                            <div class="col-md-2" style="display: none;">
                                                 <label for="customerCode" class="form-label">Dag Ref No</label>
                                                 <div class="input-group mb-3">
                                                     <input id="ref_no" name="ref_no" type="text" class="form-control"
@@ -272,7 +272,7 @@ include './auth.php';
                                                 <input type="hidden" id="dag_id" name="dag_id" />
                                             </div>
 
-                                            <div class="col-md-2 ">
+                                            <div class="col-md-2 " style="display: none;">
                                                 <label for="quotationCode" class="form-label">Quotation ref No</label>
                                                 <div class="input-group mb-3">
                                                     <input id="quotation_ref_no" name="quotation_ref_no" type="text"
@@ -283,6 +283,16 @@ include './auth.php';
                                                     </button>
                                                 </div>
                                                 <input type="hidden" id="quotation_id" name="quotation_id" />
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label for="invoice_type" class="form-label">Invoice Type</label>
+                                                <div class="input-group mb-3">
+                                                    <select id="invoice_type" name="invoice_type" class="form-select">
+                                                        <option value="customer">Customer Invoice</option>
+                                                        <option value="dealer">Dealer Invoice</option>
+                                                    </select>
+                                                </div>
                                             </div>
 
                                             <hr class="my-4">
@@ -335,7 +345,7 @@ include './auth.php';
                                                         placeholder="Name" readonly>
                                                 </div>
                                                 <div class="col-md-2">
-                                                    <label class="form-label">List Price</label>
+                                                    <label class="form-label">Price</label>
                                                     <input type="number" id="itemPrice" class="form-control"
                                                         placeholder="Price" oninput="calculatePayment()">
                                                 </div>
@@ -484,17 +494,16 @@ include './auth.php';
                                                         <tr>
                                                             <th>Code</th>
                                                             <th>Name</th>
-                                                            <th>List Price</th>
+                                                            <th>Price</th>
                                                             <th>Qty</th>
                                                             <th>Discount</th>
-                                                            <th>Selling Price</th>
                                                             <th>Total</th>
                                                             <th>Action</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="invoiceItemsBody">
                                                         <tr id="noInvoiceItemRow">
-                                                            <td colspan="8" class="text-center text-muted">
+                                                            <td colspan="7" class="text-center text-muted">
                                                                 No items
                                                                 added</td>
                                                         </tr>
