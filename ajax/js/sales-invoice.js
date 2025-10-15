@@ -293,7 +293,7 @@ jQuery(document).ready(function () {
                             })}</b></div>
                         </td>
                     
-                        <td colspan="2">${row.created_at}</td>
+                        <td colspan="3">${row.created_at}</td>
                     </tr>`;
         });
       });
@@ -305,47 +305,7 @@ jQuery(document).ready(function () {
     renderPaginationControls(page);
   }
 
-  function renderPaginatedAllItems(page = 1) {
-    let start = (page - 1) * itemsPerPage;
-    let end = start + itemsPerPage;
-    let slicedItems = fullItemList.slice(start, end);
-    let tbody = "";
 
-    let usedQtyMap = {};
-    $("#invoiceItemsBody tr").each(function () {
-      let rowCode = $(this).find('input[name="item_codes[]"]').val();
-      let rowArn = $(this).find('input[name="arn_ids[]"]').val();
-      let rowQty = parseFloat($(this).find(".item-qty").text()) || 0;
-      let key = `${rowCode}_${rowArn}`;
-
-      if (!usedQtyMap[key]) usedQtyMap[key] = 0;
-      usedQtyMap[key] += rowQty;
-    });
-
-    if (slicedItems.length > 0) {
-      const invoiceType = $("#invoice_type").val();
-      $.each(slicedItems, function (index, item) {
-        let rowIndex = start + index + 1;
-        let selectedPrice = invoiceType === "customer" ? item.customer_price : item.dealer_price;
-
-        // Main item row
-        tbody += `<tr class="table-primary" data-customer-price="${item.customer_price}" data-dealer-price="${item.dealer_price}">
-                    <td>${rowIndex}</td>
-                    <td>${item.code} - ${item.name}</td> 
-                    <td>${item.total_available_qty}</td>
-                    <td>${selectedPrice}</td>
-                    <td hidden >${item.id}</td>
-                </tr>`;
-
-        $("#available_qty").val(item.total_available_qty);
-      });
-    } else {
-      tbody = `<tr><td colspan="5" class="text-center text-muted">No items found</td></tr>`;
-    }
-
-    $("#all_itemMaster tbody").html(tbody);
-    renderPaginationControls(page);
-  }
 
   function addServiceItem() {
     $(

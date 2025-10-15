@@ -49,7 +49,7 @@ include './auth.php';
                             <?php endif; ?>
 
                             <?php if ($PERMISSIONS['edit_page']): ?>
-                                <a href="#" class="btn btn-warning" id="update">
+                                <a href="#" class="btn btn-warning" id="update" style="display: none;">
                                     <i class="uil uil-edit me-1"></i> Update
                                 </a>
                             <?php endif; ?>
