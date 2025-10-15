@@ -77,6 +77,7 @@ include_once(dirname(__FILE__) . '/BrandWiseDis.php');
 include_once(dirname(__FILE__) . '/SupplierPayment.php');
 include_once(dirname(__FILE__) . '/ServiceIncome.php');
 
+ini_set('session.gc_maxlifetime', 18000);
 session_start();
 function dd($data)
 {
