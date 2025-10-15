@@ -2,20 +2,18 @@
 include '../../class/include.php';
 header('Content-Type: application/json');
 
+
 if ($_POST['action'] === 'get_credit_invoices') {
     $customerId = (int) $_POST['customer_id'];
-
     $INVOICE = new SalesInvoice(null);
-    $data = $INVOICE->getCreditInvoicesByCustomerAndStatus(0, $customerId); // status = 1 (Active)
-
-    echo json_encode(['success' => true, 'data' => $data]);
-    exit;
+    $data = $INVOICE->getCreditInvoicesByCustomerAndStatus(0, $customerId);
+    header('Content-Type: application/json');
+    echo json_encode(['success' => !empty($data), 'data' => $data]);
+    exit();
 }
 
 // Create a new payment receipt
 if (isset($_POST['create'])) {
-
-
 
     $RECEIPT = new PaymentReceipt(NULL);
 
