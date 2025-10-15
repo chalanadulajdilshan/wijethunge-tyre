@@ -226,6 +226,7 @@ if (isset($_POST['delete']) && isset($_POST['id'])) {
 }
 
 if (isset($_POST['filter'])) {
+
     // Make sure category is always an array
     $categories = isset($_POST['category']) ? (array)$_POST['category'] : [];
 

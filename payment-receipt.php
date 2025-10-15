@@ -32,7 +32,6 @@ $payment_receipt_id = $COMPANY_PROFILE_DETAILS->company_code . '/PR/00/0' . ($la
             margin: 4px !important;
         }
     </style>
-
 </head>
 
 <body data-layout="horizontal" data-topbar="colored" class="someBlock">
@@ -126,7 +125,7 @@ $payment_receipt_id = $COMPANY_PROFILE_DETAILS->company_code . '/PR/00/0' . ($la
                                                     <div class="input-group mb-3">
                                                         <input id="customer_code" name="customer_code" type="text"
                                                             placeholder="Customer code" class="form-control" readonly>
-                                                        <button class="btn btn-info" type="button"
+                                                        <button class="btn btn-info" type="button" id="customerModalBtn"
                                                             data-bs-toggle="modal" data-bs-target="#customerModal">
                                                             <i class="uil uil-search me-1"></i>
                                                         </button>
@@ -472,33 +471,51 @@ $payment_receipt_id = $COMPANY_PROFILE_DETAILS->company_code . '/PR/00/0' . ($la
                 </div><!-- /.modal-dialog -->
             </div>
             <!-- model close here -->
+
+            <div id="customerModal" class="modal fade bs-example-modal-xl" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="ModalLabel">Manage Customers</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <table id="customerTable" class="table table-bordered dt-responsive nowrap w-100">
+                                        <thead>
+                                            <tr>
+                                                <th>#ID</th>
+                                                <th>Code</th>
+                                                <th>Name</th>
+                                                <th>Mobile Number</th>
+                                                <th>email</th>
+                                                <th>category</th>
+                                                <th>province</th>
+                                                <th>credit_limit</th>
+                                                <th>outstanding</th>
+
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <?php include 'footer.php' ?>
 
             <!-- Right bar overlay-->
             <div class="rightbar-overlay"></div>
 
-            <!-- JAVASCRIPT -->
-            <script src="assets/libs/jquery/jquery.min.js"></script>
-            <!-- /////////////////////////// -->
-            <script src="ajax/js/payment-receipt.js"></script>
-            <script src="ajax/js/common.js"></script>
-
-
             <!-- include main js  -->
             <?php include 'main-js.php' ?>
-            <script>
-                $('#quotation_table').DataTable();
-                $(function() {
-                    // Initialize the datepicker
-                    $(".date-picker").datepicker({
-                        dateFormat: 'yy-mm-dd',
-                        minDate: 0
-                    });
 
 
-                });
-            </script>
-
+            <script src="/dstyre/ajax/js/payment-receipt.js"></script>
 </body>
 
 </html>
