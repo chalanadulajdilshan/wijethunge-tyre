@@ -57,34 +57,6 @@ try {
                     </div>
                     <!-- end page title -->
 
-                    <!-- Summary Cards -->
-                    <div class="row mb-4" id="summary-cards">
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Total Cost</h5>
-                                    <h3 class="card-text" id="total-cost">Loading...</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Total Invoice</h5>
-                                    <h3 class="card-text" id="total-invoice">Loading...</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Profit %</h5>
-                                    <h3 class="card-text" id="profit-percentage">Loading...</h3>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="row">
                         <div class="col-12">
                             <div class="card">
@@ -114,7 +86,7 @@ try {
                                                     <th>Item Description</th>
                                                     <th>Department</th>
                                                     <th>Category</th>
-                                                    <th>Selling</th>
+                                                    <th>Customer Price</th>
                                                     <th>Dealer Price</th>
                                                     <th>Quantity</th>
                                                     <th>Stock Status</th>

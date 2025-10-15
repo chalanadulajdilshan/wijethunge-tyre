@@ -102,20 +102,16 @@ jQuery(document).ready(function () {
             
             {
                 data: "list_price",
-                title: "Selling",
+                title: "Customer Price",
                 render: function (data, type, row) {
                     return parseFloat(data || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 }
             },
             {
-                data: "discount",
+                data: "invoice_price",
                 title: "Dealer Price",
                 render: function (data, type, row) {
-                    if (row.list_price && data) {
-                        const dealerPrice = parseFloat(row.list_price) * (1 - parseFloat(data) / 100);
-                        return dealerPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    }
-                    return '0.00';
+                    return parseFloat(data || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 }
             },
             {
@@ -213,40 +209,6 @@ jQuery(document).ready(function () {
     // Make rows appear clickable
     $('#stockTable tbody').css('cursor', 'pointer');
 
-    // Function to load summary totals
-    function loadSummaryTotals(departmentId = 'all') {
-        const data = { action: 'get_totals' };
-        if (departmentId !== 'all' && departmentId !== '') {
-            data.department_id = departmentId;
-        }
-        $.ajax({
-            url: 'ajax/php/item-master.php',
-            type: 'POST',
-            dataType: 'json',
-            data: data,
-            success: function(resp) {
-                if (resp && resp.status === 'success') {
-                    const data = resp.data;
-                    $('#total-cost').text('Rs. ' + parseFloat(data.total_cost || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-                    $('#total-invoice').text('Rs. ' + parseFloat(data.total_invoice || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-                    $('#profit-percentage').text(parseFloat(data.profit_percentage || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%');
-                } else {
-                    $('#total-cost').text('Error');
-                    $('#total-invoice').text('Error');
-                    $('#profit-percentage').text('Error');
-                }
-            },
-            error: function() {
-                $('#total-cost').text('Error');
-                $('#total-invoice').text('Error');
-                $('#profit-percentage').text('Error');
-            }
-        });
-    }
-
-    // Load summary totals on page load
-    loadSummaryTotals();
-
     // Format function for row details (ARN-wise Last Price and Invoice Price)
     function renderArnWiseTable(lots) {
         if (!Array.isArray(lots) || lots.length === 0) {
@@ -258,9 +220,8 @@ jQuery(document).ready(function () {
                 '<th class="text-end">Cost</th>'+
                 '<th class="text-end">Qty</th>'+
                 '<th class="text-end">Total</th>'+
-                '<th class="text-end">List Price</th>'+
-                '<th class="text-end">Invoice Price</th>'+
-                '<th class="text-end">Total</th>'+
+                '<th class="text-end">Customer Price</th>'+
+                '<th class="text-end">Dealer Price</th>'+
             '</tr></thead><tbody>';
         lots.forEach(function(l){
             html += '<tr>'+
@@ -270,7 +231,6 @@ jQuery(document).ready(function () {
                 '<td class="text-end">'+Number((l.cost || 0) * (l.qty || 0)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})+'</td>'+
                 '<td class="text-end">'+Number(l.list_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})+'</td>'+
                 '<td class="text-end">'+Number(l.invoice_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})+'</td>'+
-                '<td class="text-end">'+Number((l.invoice_price || 0) * (l.qty || 0)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})+'</td>'+
             '</tr>';
         });
         html += '</tbody></table></div>';
@@ -332,7 +292,6 @@ jQuery(document).ready(function () {
     // Department filter change handler
     $('#filter_department_id').on('change', function () {
         const depId = $(this).val();
-        loadSummaryTotals(depId);
         table.ajax.reload();
     });
 
