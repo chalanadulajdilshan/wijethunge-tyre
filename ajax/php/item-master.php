@@ -428,6 +428,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_stock_tmp_by_item') {
             }
             $lot['arn_no'] = $arnNo;
             $lot['department'] = $deptName;
+            // Map field names to match JavaScript expectations
+            $lot['list_price'] = (float)$lot['customer_price'];
+            $lot['invoice_price'] = (float)$lot['dealer_price'];
             $decorated[] = $lot;
         }
 
