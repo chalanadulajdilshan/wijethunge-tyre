@@ -425,6 +425,7 @@ class SalesInvoice
                  AND `status` = $status 
                  AND `customer_id` = $customer_id 
                  AND `grand_total` > `outstanding_settle_amount`
+                 AND `is_cancel`='0'
                  ORDER BY `invoice_date` DESC";
         $db = new Database();
         $result = $db->readQuery($query);

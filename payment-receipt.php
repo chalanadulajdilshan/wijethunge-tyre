@@ -515,7 +515,7 @@ $payment_receipt_id = $COMPANY_PROFILE_DETAILS->company_code . '/PR/00/0' . ($la
             <?php include 'main-js.php' ?>
 
 
-            <script src="/dstyre/ajax/js/payment-receipt.js"></script>
+            <script src="/ajax/js/payment-receipt.js"></script>
 </body>
 
 </html>
