@@ -539,9 +539,9 @@ jQuery(document).ready(function () {
   function fetchInvoiceItems(invoiceId) {
     $(".someBlock").preloader(); // Show preloader
     $.ajax({
-      url: "ajax/php/temp-sales-items.php", // Replace with your PHP endpoint
-      type: "GET",
-      data: { invoice_id: invoiceId },
+      url: "ajax/php/sales-invoice.php", // Correct endpoint
+      type: "POST",
+      data: { get_items: true, invoice_id: invoiceId },
       dataType: "json",
       success: function (response) {
         $(".someBlock").preloader("remove"); // Remove preloader
@@ -558,23 +558,16 @@ jQuery(document).ready(function () {
             let row = `
                             <tr>
                                 <td>${item.item_code_name}</td>
-                                <td>${item.item_name}</td>
-                                <td>${parseFloat(item.list_price || item.price).toLocaleString(
+                                <td>${item.display_name}</td>
+                                <td class="item-price">${parseFloat(item.price).toLocaleString(
                                   undefined,
                                   {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2,
                                   }
                                 )}</td>
-                                <td>${item.quantity}</td>
-                                <td>${discountValue}</td>
-                                <td>${parseFloat(item.price).toLocaleString(
-                                  undefined,
-                                  {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  }
-                                )}</td>   
+                                <td class="item-qty">${item.quantity}</td>
+                                <td class="item-discount">${discountValue}</td>
                                 <td>${parseFloat(item.total).toLocaleString(
                                   undefined,
                                   {
@@ -595,14 +588,14 @@ jQuery(document).ready(function () {
           });
         } else {
           tbody.html(`<tr id="noItemRow">
-                                    <td colspan="8" class="text-center text-muted">No items found</td>
+                                    <td colspan="7" class="text-center text-muted">No items found</td>
                                 </tr>`);
         }
       },
       error: function (xhr, status, error) {
         console.error("Failed to fetch items:", error);
         $("#invoiceItemsBody").html(
-          `<tr><td colspan="8" class="text-center text-danger">Error loading items </td></tr>`
+          `<tr><td colspan="7" class="text-center text-danger">Error loading items </td></tr>`
         );
       },
     });
@@ -644,15 +637,21 @@ jQuery(document).ready(function () {
         $("#invoice_id").val(response.id || "");
         $("#invoice_no").val(response.invoice_no || "");
         $("#invoice_date").val(response.invoice_date || "");
+        $("#invoice_type").val(response.invoice_type || "customer");
         $("#company_id")
           .val(response.company_id || "")
           .trigger("change");
 
         // Set customer information
+        $("#customer_id").val(response.customer_id || "");
         $("#customer_code").val(response.customer_code || "");
         $("#customer_name").val(response.customer_name || "");
         $("#customer_address").val(response.customer_address || "");
         $("#customer_mobile").val(response.customer_mobile || "");
+        $("#recommended_person").val(response.recommended_person || "");
+
+        // Set department
+        $("#department_id").val(response.department_id || "").trigger("change");
 
         // Set other fields
         $("#vat_type")

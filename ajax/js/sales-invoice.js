@@ -36,6 +36,26 @@ jQuery(document).ready(function () {
     togglePaymentButtons();
   });
 
+  // INVOICE TYPE CHANGE
+  $("#invoice_type").on("change", function () {
+    // If there's an item selected, update the price based on the new type
+    const itemCode = $("#itemCode").val();
+    if (itemCode) {
+      // Find the current active ARN row and extract prices
+      const activeArn = $(".arn-row.active-arn").first();
+      if (activeArn.length) {
+        const customerPrice = parseFloat(activeArn.data("customer-price"));
+        const dealerPrice = parseFloat(activeArn.data("dealer-price"));
+
+        const invoiceType = $(this).val();
+        const selectedPrice = invoiceType === "customer" ? customerPrice : dealerPrice;
+
+        $("#itemPrice").val(parseFloat(selectedPrice).toFixed(2));
+        calculatePayment("price");
+      }
+    }
+  });
+
   // Initial button state
   togglePaymentButtons();
 
@@ -234,12 +254,17 @@ jQuery(document).ready(function () {
             rowClass = "disabled-arn";
           }
 
+          const invoiceType = $("#invoice_type").val();
+          const selectedPrice = invoiceType === "customer" ? row.customer_price : row.dealer_price;
+
           tbody += `
                     <tr class="table-info arn-row ${rowClass}" 
                         data-arn-index="${i}" 
                         data-qty="${totalQty}" 
                         data-used="${usedQty}" 
-                        data-arn-id="${arnId}">
+                        data-arn-id="${arnId}"
+                        data-customer-price="${row.customer_price}"
+                        data-dealer-price="${row.dealer_price}">
                         
                         <td colspan="1" style="width: 15%;"><strong>ARN:</strong> ${arnId}
                         
@@ -262,19 +287,8 @@ jQuery(document).ready(function () {
                         </td>
                     
                         <td style="width: 15%;">
-                            <div><strong>List Price:</strong></div>
-                            <div class='text-danger'><b>${Number(
-                              item.list_price
-                            ).toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                            })}</b></div>
-                        </td>
-                    
-                        <td style="width: 15%;">
-                            <div><strong>Sales Price:</strong></div>
-                            <div class='text-danger'><b>${Number(
-                              item.invoice_price
-                            ).toLocaleString("en-US", {
+                            <div><strong>Price:</strong></div>
+                            <div class='text-danger'><b>${Number(selectedPrice).toLocaleString("en-US", {
                               minimumFractionDigits: 2,
                             })}</b></div>
                         </td>
@@ -309,23 +323,24 @@ jQuery(document).ready(function () {
     });
 
     if (slicedItems.length > 0) {
+      const invoiceType = $("#invoice_type").val();
       $.each(slicedItems, function (index, item) {
         let rowIndex = start + index + 1;
+        let selectedPrice = invoiceType === "customer" ? item.customer_price : item.dealer_price;
 
         // Main item row
-        tbody += `<tr class="table-primary">
+        tbody += `<tr class="table-primary" data-customer-price="${item.customer_price}" data-dealer-price="${item.dealer_price}">
                     <td>${rowIndex}</td>
                     <td>${item.code} - ${item.name}</td> 
                     <td>${item.total_available_qty}</td>
-                    <td>${item.list_price}</td>
-                    <td>${item.invoice_price}</td>
+                    <td>${selectedPrice}</td>
                     <td hidden >${item.id}</td>
                 </tr>`;
 
         $("#available_qty").val(item.total_available_qty);
       });
     } else {
-      tbody = `<tr><td colspan="8" class="text-center text-muted">No items found</td></tr>`;
+      tbody = `<tr><td colspan="5" class="text-center text-muted">No items found</td></tr>`;
     }
 
     $("#all_itemMaster tbody").html(tbody);
@@ -640,17 +655,21 @@ jQuery(document).ready(function () {
     let itemCode = mainRow.find("td").eq(1).text().trim().split(" - ")[0] || "";
     let itemName = mainRow.find("td").eq(1).text().trim().split(" - ")[1] || "";
     let availableQty = mainRow.find("td").eq(2).text().trim();
-    let itemPrice = mainRow.find("td").eq(3).text().trim(); // invoice_price is at index 4
-    let itemSalePrice = mainRow.find("td").eq(4).text().trim(); // invoice_price is at index 4
-    let item_id = mainRow.find("td").eq(5).text().trim(); // id is at index 5 and hidden
+    let customerPrice = parseFloat(mainRow.data("customer-price"));
+    let dealerPrice = parseFloat(mainRow.data("dealer-price"));
+    let item_id = mainRow.find("td").eq(4).text().trim(); // id is at index 4 and hidden
 
     $("#available_qty").val(availableQty);
 
     $("#itemCode").val(itemCode);
     $("#itemName").val(itemName);
     $("#item_id").val(item_id);
-    $("#itemPrice").val(itemPrice);
-    $("#itemSalePrice").val(itemSalePrice);
+
+    const invoiceType = $("#invoice_type").val();
+    const selectedPrice = invoiceType === "customer" ? customerPrice : dealerPrice;
+
+    $("#itemPrice").val(selectedPrice);
+    $("#itemSalePrice").val(dealerPrice);
 
     calculatePayment();
 
@@ -694,32 +713,33 @@ jQuery(document).ready(function () {
     let arnMatch = arnText.match(/ARN:\s*(.+)/i);
     let arn = arnMatch ? arnMatch[1].trim() : "";
 
-    //Extract Invoice Price (now from td:eq(5))
-    let invoicePriceText = tdHtml.eq(4).text();
-    let invoiceMatch = invoicePriceText.match(/Sales Price:\s*([\d.,]+)/i);
-    let invoicePrice = invoiceMatch
-      ? parseFloat(invoiceMatch[1].replace(/,/g, ""))
-      : 0;
+    //Extract Price (now in td:eq(3))
+    let priceText = tdHtml.eq(3).text();
+    let priceMatch = priceText.match(/Price:\s*([\d.,]+)/i);
+    let price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, "")) : 0;
 
-    let listPriceText = tdHtml.eq(3).text();
-    let listPriceMatch = listPriceText.match(/List Price:\s*([\d.,]+)/i);
-    let listPrice = listPriceMatch
-      ? parseFloat(listPriceMatch[1].replace(/,/g, ""))
-      : 0;
+    let customerPrice = parseFloat($(this).data("customer-price"));
+    let dealerPrice = parseFloat($(this).data("dealer-price"));
+
+    // Get selected invoice type
+    const invoiceType = $("#invoice_type").val();
+
+    // Set itemPrice based on invoice type
+    let selectedPrice = invoiceType === "customer" ? customerPrice : dealerPrice;
 
     // Apply to inputs
     $("#itemCode").val(itemCode);
     $("#itemName").val(itemName);
-    $("#itemPrice").val(parseFloat(listPrice).toFixed(2));
-    $("#itemSalePrice").val(parseFloat(invoicePrice).toFixed(2));
+    $("#itemPrice").val(parseFloat(selectedPrice).toFixed(2));
+    $("#itemSalePrice").val(parseFloat(dealerPrice).toFixed(2)); // Dealer price as selling price
     $("#item_cost_arn").val(parseFloat(cost_arn).toFixed(2));
 
-    let invoice = parseFloat(invoicePrice);
-    let list = parseFloat(listPrice);
+    let customer = parseFloat(customerPrice);
+    let dealer = parseFloat(dealerPrice);
 
-    if (!isNaN(invoice) && !isNaN(list) && list > 0) {
-      // calculate percentage difference
-      let percentage = ((list - invoice) / list) * 100;
+    if (!isNaN(customer) && !isNaN(dealer) && customer > 0) {
+      // calculate percentage difference (customer - dealer) / customer * 100
+      let percentage = ((customer - dealer) / customer) * 100;
 
       // show percentage (2 decimals)
       $("#itemDiscount").val(percentage.toFixed(2));
@@ -960,6 +980,36 @@ jQuery(document).ready(function () {
     }
   });
 
+  //UPDATE BUTTON
+  $("#update").on("click", function (event) {
+    event.preventDefault();
+
+    if (!$("#customer_id").val()) {
+      swal({
+        title: "Error!",
+        text: "Please select a customer before updating invoice.",
+        type: "error",
+        timer: 3000,
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+    const invoiceNo = $("#invoice_no").val().trim();
+    if (!invoiceNo) {
+      $("#invoice_no").focus();
+      return swal({
+        title: "Error!",
+        text: "Please enter an invoice number",
+        type: "error",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    }
+
+    processInvoiceUpdate();
+  });
+
   $("#save").click(function (event) {
     event.preventDefault();
 
@@ -986,47 +1036,41 @@ jQuery(document).ready(function () {
       });
     }
 
-    const dag_id = $("#dag_id").val();
-
-    if (dag_id != 0) {
-      processDAGInvoiceCreation();
-    } else {
-      $.ajax({
-        url: "ajax/php/sales-invoice.php",
-        method: "POST",
-        data: {
-          action: "check_invoice_id",
-          invoice_no: invoiceNo,
-        },
-        dataType: "json",
-        success: function (checkRes) {
-          if (checkRes.exists) {
-            $("#invoice_no").focus();
-            swal({
-              title: "Duplicate!",
-              text:
-                "Invoice No <strong>" + invoiceNo + "</strong> already exists.",
-              type: "error",
-              html: true,
-              timer: 2500,
-              showConfirmButton: false,
-            });
-            return;
-          }
-
-          processInvoiceCreation();
-        },
-        error: function () {
+    $.ajax({
+      url: "ajax/php/sales-invoice.php",
+      method: "POST",
+      data: {
+        action: "check_invoice_id",
+        invoice_no: invoiceNo,
+      },
+      dataType: "json",
+      success: function (checkRes) {
+        if (checkRes.exists) {
+          $("#invoice_no").focus();
           swal({
-            title: "Error!",
-            text: "Unable to verify Invoice No. right now.",
+            title: "Duplicate!",
+            text:
+              "Invoice No <strong>" + invoiceNo + "</strong> already exists.",
             type: "error",
-            timer: 3000,
+            html: true,
+            timer: 2500,
             showConfirmButton: false,
           });
-        },
-      });
-    }
+          return;
+        }
+
+        processInvoiceCreation();
+      },
+      error: function () {
+        swal({
+          title: "Error!",
+          text: "Unable to verify Invoice No. right now.",
+          type: "error",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+      },
+    });
   });
 
   //ITEM INVOICE PROCESS
@@ -1035,44 +1079,39 @@ jQuery(document).ready(function () {
     const dagItems = [];
 
     //  item invoice to send this php file
-    $("#invoiceItemsBody tr").each(function () {
-      const code = $(this).find("td:eq(0)").text().trim();
-      const name = $(this).find("td:eq(1)").text().trim();
-      const price = parseFloat($(this).find("td:eq(2)").text()) || 0;
-
-      let qty = parseFloat($(this).find("td:eq(3)").text()) || 0;
+    $("#invoiceItemsBody tr").each(function (index) {
+      const selectedPrice = parseFloat($(this).find("td:eq(2)").text()) || 0;
+      const qty = parseFloat($(this).find("td:eq(3)").text()) || 0;
       const discount = parseFloat($(this).find("td:eq(4)").text()) || 0;
-      const selling_price = parseFloat($(this).find("td:eq(5)").text()) || 0;
 
-      const totalItem = parseFloat($(this).find("td:eq(6)").text()) || 0;
       const item_id = $(this).find('input[name="item_id[]"]').val();
+      const code = $(this).find('input[name="item_codes[]"]').val();
+      const customer_price = parseFloat($(this).find('input[name="customer_prices[]"]').val()) || 0;
+      const dealer_price = parseFloat($(this).find('input[name="dealer_prices[]"]').val()) || 0;
       const arn_no = $(this).find('input[name="arn_ids[]"]').val();
-      const arn_cost =
-        parseFloat($(this).find('input[name="arn_costs[]"]').val()) || price;
-      const service_qty =
-        parseFloat($(this).find('input[name="service_qty[]"]').val()) || 0;
-      const vehicle_no = $(this).find('input[name="vehicle_no[]"]').val() || '';
-      const current_km = $(this).find('input[name="current_km[]"]').val() || '';
-      const next_service_days = $(this).find('input[name="next_service_days[]"]').val() || '';
+      const cost = parseFloat($(this).find('input[name="arn_costs[]"]').val()) || 0;
+      const service_qty = parseFloat($(this).find('input[name="service_qty[]"]').val()) || 0;
+      const vehicle_no = $(this).find('input[name="vehicle_no[]"]').val();
+      const current_km = $(this).find('input[name="current_km[]"]').val();
+      const next_service_days = $(this).find('input[name="next_service_days[]"]').val();
 
-      if (code && !isNaN(totalItem) && item_id) {
-        items.push({
-          item_id,
-          code,
-          name,
-          price,
-          qty,
-          discount,
-          selling_price,
-          total: totalItem,
-          cost: arn_cost, // Using ARN cost instead of price
-          arn_no,
-          service_qty,
-          vehicle_no,
-          current_km,
-          next_service_days,
-        });
-      }
+      items.push({
+        item_id,
+        code,
+        name: $(this).find("td").eq(1).text().trim(),
+        price: selectedPrice,
+        selling_price: dealer_price, // Use dealer price for selling_price
+        customer_price,
+        dealer_price,
+        qty,
+        discount,
+        arn_no,
+        cost,
+        service_qty,
+        vehicle_no,
+        current_km,
+        next_service_days,
+      });
     });
 
    // Validate items
@@ -1273,6 +1312,267 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         swal({
           title: "Success!",
           text: "Invoice saved successfully!",
+          type: "success",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+
+        $("#paymentModal").modal("hide");
+        window.open("invoice.php?invoice_no=" + invoiceId, "_blank");
+        setTimeout(() => location.reload(), 3000);
+      },
+      error: function (xhr) {
+        console.error(xhr.responseText);
+        swal({
+          title: "Error",
+          text: "Something went wrong!",
+          type: "error",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+      },
+    });
+  }
+
+  //PROCESS INVOICE UPDATE
+  function processInvoiceUpdate() {
+    const items = [];
+    const dagItems = [];
+
+    //  item invoice to send this php file
+    $("#invoiceItemsBody tr").each(function (index) {
+      const selectedPrice = parseFloat($(this).find("td:eq(2)").text()) || 0;
+      const qty = parseFloat($(this).find("td:eq(3)").text()) || 0;
+      const discount = parseFloat($(this).find("td:eq(4)").text()) || 0;
+
+      const item_id = $(this).find('input[name="item_id[]"]').val();
+      const code = $(this).find('input[name="item_codes[]"]').val();
+      const customer_price = parseFloat($(this).find('input[name="customer_prices[]"]').val()) || 0;
+      const dealer_price = parseFloat($(this).find('input[name="dealer_prices[]"]').val()) || 0;
+      const arn_no = $(this).find('input[name="arn_ids[]"]').val();
+      const cost = parseFloat($(this).find('input[name="arn_costs[]"]').val()) || 0;
+      const service_qty = parseFloat($(this).find('input[name="service_qty[]"]').val()) || 0;
+      const vehicle_no = $(this).find('input[name="vehicle_no[]"]').val();
+      const current_km = $(this).find('input[name="current_km[]"]').val();
+      const next_service_days = $(this).find('input[name="next_service_days[]"]').val();
+
+      items.push({
+        item_id,
+        code,
+        name: $(this).find("td").eq(1).text().trim(),
+        price: selectedPrice,
+        selling_price: dealer_price, // Use dealer price for selling_price
+        customer_price,
+        dealer_price,
+        qty,
+        discount,
+        arn_no,
+        cost,
+        service_qty,
+        vehicle_no,
+        current_km,
+        next_service_days,
+      });
+    });
+
+   // Validate items
+if (items.length === 0 && dagItems.length === 0) {
+  return swal({
+    title: "Error!",
+    text: "Please add at least one item.",
+    type: "error",
+    timer: 3000,
+    showConfirmButton: false,
+  });
+}
+
+// Validate customer name
+const customerName = $("#customer_name").val().trim();
+if (!customerName) {
+  $("#customer_name").focus();
+  return swal({
+    title: "Error!",
+    text: "Please select a customer before updating invoice.",
+    type: "error",
+    timer: 3000,
+    showConfirmButton: false,
+  });
+}
+
+// Validate cash sales with credit
+if ($("#customer_code").val() === "CM/01" && $("#payment_type").val() === "2") {
+  $("#customer_code").focus();
+  return swal({
+    title: "Error!",
+    text: "Cash sales customer is not allowed to create a credit invoice.",
+    type: "error",
+    timer: 3000,
+    showConfirmButton: false,
+  });
+}
+
+// Validate credit period 
+if ($("input[name='payment_type']:checked").val() === "2") {
+  const creditPeriod = $("#credit_period").val()?.trim();
+  if (!creditPeriod) {
+    return swal({
+      title: "Error!",
+      text: "Please select credit period.",
+      type: "error",
+      timer: 3000,
+      showConfirmButton: false,
+    });
+  }
+}
+
+
+        
+
+    let payments = [];
+    let finalTotal = parseFloat($("#modalFinalTotal").val()) || 0;
+    let totalAmount = 0;
+
+    // Collect all payment rows
+    $("#paymentRows .payment-row").each(function () {
+      let methodId = $(this).find(".paymentType").val();
+      let amount = parseFloat($(this).find(".paymentAmount").val()) || 0;
+      let paymentMethod = $(this)
+        .find(".paymentType option:selected")
+        .text()
+        .toLowerCase();
+
+      // Only include cheque details for cheque payments
+      let chequeNumber = null;
+      let chequeBank = null;
+      let chequeDate = "1000-01-01"; // Default valid MySQL date
+
+      if (paymentMethod.includes("cheque")) {
+        chequeNumber =
+          $(this).find('input[name="chequeNumber[]"]').val() || null;
+        chequeBank = $(this).find('input[name="chequeBank[]"]').val() || null;
+        let dateInput = $(this).find('input[name="chequeDate[]"]').val();
+        chequeDate = dateInput ? dateInput : "1000-01-01"; // Use default date if not provided
+      }
+
+      if (!methodId && $("#customer_id").val() == "CM/01") {
+        swal({
+          title: "Error!",
+          text: "Please select a payment method in all rows.",
+          type: "error",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        return false; // break out of each
+      }
+
+      if (amount <= 0 && $("#customer_id").val() == "CM/01") {
+        swal({
+          title: "Error!",
+          text: "Please enter a valid amount in all rows.",
+          type: "error",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        return false; // break out of each
+      }
+
+      totalAmount += amount;
+
+      payments.push({
+        method_id: methodId,
+        amount: amount,
+        reference_no: chequeNumber,
+        bank_name: chequeBank,
+        cheque_date: chequeDate || null,
+      });
+    });
+
+    if (paymentType == 2) {
+        const creditPeriod = $("#credit_period").val();
+        if (!creditPeriod) {
+            swal({
+                title: "Error!",
+                text: "Please select a credit period for credit sales.",
+                type: "error",
+                timer: 3000,
+                showConfirmButton: false,
+            });
+            return;
+        }
+    }
+
+    if (
+      totalAmount !== finalTotal &&
+      $('input[name="payment_type"]:checked').val() == "1"
+    ) {
+      swal({
+        title: "Error!",
+        text: "Total amount does not match the final total.",
+        type: "error",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      return false;
+    }
+
+    const formData = new FormData($("#form-data")[0]);
+    formData.append("update", true);
+    formData.append(
+      "payment_type",
+      $('input[name="payment_type"]:checked').val()
+    );
+    formData.append("customer_id", $("#customer_id").val());
+    formData.append("customer_name", $("#customer_name").val());
+    formData.append("customer_mobile", $("#customer_mobile").val());
+    formData.append("customer_address", $("#customer_address").val());
+    formData.append("recommended_person", $("#recommended_person").val());
+    formData.append("invoice_no", $("#invoice_no").val());
+    formData.append("invoice_date", $("#invoice_date").val());
+    formData.append("items", JSON.stringify(items));
+    formData.append(
+      "sales_type",
+      $('input[name="payment_type"]:checked').val()
+    ); // Using payment_type as sales_type
+    formData.append("company_id", $("#company_id").val() || 1); // Default to 1 if not found
+    formData.append("department_id", $("#department_id").val() || 1); // Default to 1 if not found
+    formData.append("payments", JSON.stringify(payments));
+
+    
+    formData.append("paidAmount", $("#paidAmount").val() || 1); // Default to 1 if not found
+
+    formData.append("credit_period", $("#credit_period").val() || null);
+    formData.append("remark", $("#remark").val() || null);
+
+    $(".someBlock").preloader();
+
+    $.ajax({
+      url: "ajax/php/sales-invoice.php",
+      type: "POST",
+      data: formData,
+      contentType: false,
+      processData: false,
+      dataType: "json",
+      success: function (res) {
+        const invoiceId = res.invoice_id;
+        // Save DAG items
+        $.ajax({
+          url: "ajax/php/sales-invoice-dag.php",
+          type: "POST",
+          data: {
+            invoice_id: invoiceId,
+            items: JSON.stringify(dagItems),
+          },
+          success: function () {
+            console.log("DAG invoice saved");
+          },
+          error: function () {
+            console.error("DAG invoice save failed");
+          },
+        });
+
+        swal({
+          title: "Success!",
+          text: "Invoice updated successfully!",
           type: "success",
           timer: 3000,
           showConfirmButton: false,
@@ -1562,16 +1862,24 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     $("#noInvoiceItemRow").remove();
 
     // Calculate display values based on invoice type
-    let displayPrice, displayName;
+    let displayPrice, displayName, customerPrice, dealerPrice, selectedPrice;
     if ($("#serviceItemTable").is(":visible")) {
       // For service invoices, show combined service + service item details
       const serviceSellingPrice = parseFloat($("#serviceSellingPrice").val()) || 0;
       const combinedPriceBeforeDiscount = price + serviceSellingPrice;
       displayPrice = combinedPriceBeforeDiscount;
       displayName = name + " (Service + Item)";
+      customerPrice = combinedPriceBeforeDiscount; // For services, same price
+      dealerPrice = combinedPriceBeforeDiscount;
+      selectedPrice = combinedPriceBeforeDiscount;
     } else {
-      // For regular invoices, show original values
-      displayPrice = price;
+      // For regular invoices, get prices from the modal data
+      // We need to get the prices from the clicked row
+      const invoiceType = $("#invoice_type").val();
+      customerPrice = price; // itemPrice is set based on type
+      dealerPrice = sale_price;
+      selectedPrice = price; // Show selected price
+      displayPrice = price; // Show selected price
       displayName = name;
     }
 
@@ -1583,6 +1891,8 @@ if ($("input[name='payment_type']:checked").val() === "2") {
                 <td>${code}
                     <input type="hidden" name="item_id[]" value="${item_id}">
                     <input type="hidden" name="item_codes[]" value="${code}">
+                    <input type="hidden" name="customer_prices[]" value="${customerPrice}">
+                    <input type="hidden" name="dealer_prices[]" value="${dealerPrice}">
                     <input type="hidden" name="arn_ids[]" value="${arnId}">
                     <input type="hidden" name="arn_costs[]" value="${cost}">
                     <input type="hidden" name="service_qty[]" value="${serviceQty}">
@@ -1591,10 +1901,9 @@ if ($("input[name='payment_type']:checked").val() === "2") {
                     <input type="hidden" name="next_service_days[]" value="${nextServiceDays}">
                 </td>
                 <td>${displayName}</td>
-                <td class="item-price">${displayPrice.toFixed(2)}</td>
+                <td class="item-price">${selectedPrice.toFixed(2)}</td>
                 <td class="item-qty">${qty}</td>
                 <td class="item-discount">${discount}</td>
-                <td class="item-sell-price">${sale_price.toFixed(2)}</td>
                 <td>${total.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,

@@ -31,10 +31,16 @@ if (isset($_POST['create'])) {
     $totalDiscount = 0;
     $final_cost = 0;
 
+    $customer_prices = isset($_POST['customer_prices']) ? $_POST['customer_prices'] : [];
+    $dealer_prices = isset($_POST['dealer_prices']) ? $_POST['dealer_prices'] : [];
+
     // Calculate subtotal and discount
-    foreach ($items as $item) {
+    foreach ($items as $key => $item) {
         $price = floatval($item['price']); // Use list_price for subtotal calculation to match interface
         $qty = floatval($item['qty']);
+
+        $customer_price = isset($customer_prices[$key]) ? floatval($customer_prices[$key]) : $price;
+        $dealer_price = isset($dealer_prices[$key]) ? floatval($dealer_prices[$key]) : $price;
 
         if (isset($item['discount'])) {
             $discount_percentage = (float)$item['discount'];
@@ -92,7 +98,7 @@ if (isset($_POST['create'])) {
     $CUSTOMER_MASTER = new CustomerMaster(NULL);
 
     $SALES_INVOICE->invoice_no = $invoiceId;
-    $SALES_INVOICE->invoice_type = 'INV';
+    $SALES_INVOICE->invoice_type = isset($_POST['invoice_type']) ? $_POST['invoice_type'] : 'INV';
     $SALES_INVOICE->invoice_date = $_POST['invoice_date'];
     $SALES_INVOICE->company_id = $_POST['company_id'];
     $SALES_INVOICE->customer_id = $_POST['customer_id'];
@@ -167,6 +173,8 @@ if (isset($_POST['create'])) {
                 $correctDepartmentId = $deptRow['department_id'];
             }
 
+            $invoice_type = $SALES_INVOICE->invoice_type;
+
             $SALES_ITEM = new SalesInvoiceItem(NULL);
 
             $SALES_ITEM->invoice_id = $invoiceTableId;
@@ -187,10 +195,10 @@ if (isset($_POST['create'])) {
 
             $item_discount_amount = ($item['price'] * $qty_for_total) * $item_discount_percentage / 100;
 
-            // Store item name with ARN ID and department for cancellation tracking
             $SALES_ITEM->item_name = $item['name'] . '|ARN:' . $arn_id . '|DEPT:' . $correctDepartmentId;
-            $SALES_ITEM->list_price = $item['price']; // Save the original list price
-            $SALES_ITEM->price = $item['selling_price']; // Save the actual selling price (price after discount per unit)
+            $SALES_ITEM->price = $invoice_type === 'customer' ? $customer_price : $dealer_price;
+            $SALES_ITEM->customer_price = $customer_price; // Save the customer price
+            $SALES_ITEM->dealer_price = $dealer_price; // Save the dealer price
             $SALES_ITEM->cost = $item['cost']; // Set the cost field
             $SALES_ITEM->discount = $item_discount_amount;
             $SALES_ITEM->total = ($item['selling_price'] * $qty_for_total);
@@ -383,20 +391,16 @@ if (isset($_POST['action']) && $_POST['action'] == 'check_status') {
 
 // Cancel invoice
 if (isset($_POST['action']) && $_POST['action'] == 'cancel') {
-
-
     $invoiceId = $_POST['id'];
     $arnIds = isset($_POST['arnIds']) ? $_POST['arnIds'] : [];
 
     $SALES_INVOICE = new SalesInvoice($invoiceId);
 
-
-
-
     if ($SALES_INVOICE->is_cancel == 1) {
         echo json_encode(['status' => 'already_cancelled']);
         exit();
     }
+    
     $result = $SALES_INVOICE->cancel();
 
     if ($result) {
@@ -405,7 +409,6 @@ if (isset($_POST['action']) && $_POST['action'] == 'cancel') {
         $STOCK_ITEM_TMP = new StockItemTmp(NULL);
 
         $items = $SALES_INVOICE_ITEM->getItemsByInvoiceId($invoiceId);
-
 
         foreach ($items as $item) {
             
@@ -440,37 +443,58 @@ if (isset($_POST['action']) && $_POST['action'] == 'cancel') {
                 $STOCK_TRANSACTION->created_at = date("Y-m-d H:i:s");
                 $STOCK_TRANSACTION->create();
 
-                // Add back quantity to the specific ARN in its original department
+                // Restore ARN quantities - try specific ARN first, then fallback to general ARN stock restoration
+                $arnRestored = false;
                 if ($arnId) {
+                    // Try to restore to the specific ARN that was used
                     $qtyToAdd = abs($item['quantity']);
-                    $STOCK_ITEM_TMP->updateQtyByArnId($arnId, $item['item_code'], $arnDepartmentId, $qtyToAdd);
+                    $arnRestored = $STOCK_ITEM_TMP->updateQtyByArnId($arnId, $item['item_code'], $arnDepartmentId, $qtyToAdd);
+                }
+                
+                // If specific ARN restoration failed or no ARN ID, restore to general ARN stock using FIFO
+                if (!$arnRestored) {
+                    $STOCK_ITEM_TMP->addBackQuantity($item['item_code'], $arnDepartmentId, abs($item['quantity']));
                 }
              
-            }else{
+            } else {
                 $SERVICE_ITEM = new ServiceItem($item['service_item_code']);
                 $currentQty = $SERVICE_ITEM->qty;
                 $newQty = $currentQty + $item['quantity'];
                 $SERVICE_ITEM->qty = $newQty;
                 $SERVICE_ITEM->update();
             }
-
         }
 
-
         //audit log
-        $AUDIT_LOG = new AuditLog(NUll);
+        $AUDIT_LOG = new AuditLog(NULL);
         $AUDIT_LOG->ref_id = $invoiceId;
         $AUDIT_LOG->ref_code = $invoiceId;
         $AUDIT_LOG->action = 'CANCEL';
         $AUDIT_LOG->description = 'CANCEL INVOICE NO #' . $SALES_INVOICE->invoice_no;
         $AUDIT_LOG->user_id = $_SESSION['id'];
         $AUDIT_LOG->created_at = date("Y-m-d H:i:s");
-        $result =   $AUDIT_LOG->create();
+        $AUDIT_LOG->create();
 
-        if ($result) {
-            echo json_encode(['status' => 'success']);
-        } else {
-            echo json_encode(['status' => 'error']);
-        }
+        echo json_encode(['status' => 'success', 'message' => 'Invoice cancelled successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to cancel invoice']);
     }
+    exit();
+}
+
+if (isset($_POST['get_items'])) {
+    $SALES_INVOICE = new SalesInvoice(NULL);
+    $invoice = $SALES_INVOICE->getByID($_POST['invoice_id']);
+    $invoice_type = $invoice && isset($invoice['invoice_type']) ? $invoice['invoice_type'] : 'customer'; // default to customer if not found
+
+    $SALES_INVOICE_ITEM = new SalesInvoiceItem(NULL);
+    $items = $SALES_INVOICE_ITEM->getItemsByInvoiceId($_POST['invoice_id']);
+
+    // Set the price based on invoice_type
+    foreach ($items as &$item) {
+        $item['price'] = $invoice_type === 'customer' ? $item['customer_price'] : $item['dealer_price'];
+    }
+
+    echo json_encode($items);
+    exit();
 }

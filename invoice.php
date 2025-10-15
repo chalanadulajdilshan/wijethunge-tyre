@@ -145,7 +145,11 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                     </div>
                     <div class="col-md-4 text-sm-start text-md-start">
                         <h3 style="font-weight:bold;font-size:18px;">
-                            <?php echo ($SALES_INVOICE->payment_type == 1) ? "CASH SALES INVOICE" : "CREDIT SALES INVOICE"; ?>
+                            <?php 
+                            $invoice_type_text = ($SALES_INVOICE->invoice_type == 'customer') ? 'CUSTOMER' : (($SALES_INVOICE->invoice_type == 'dealer') ? 'DEALER' : 'REGULAR');
+                            $payment_type_text = ($SALES_INVOICE->payment_type == 1) ? "CASH" : "CREDIT";
+                            echo $payment_type_text . " " . $invoice_type_text . " SALES INVOICE";
+                            ?>
                         </h3>
                         <p class="mb-1 text-muted" style="font-size:14px;"><strong> Name:</strong> <?php echo $SALES_INVOICE->customer_name ?></p>
                         <p class="mb-1 text-muted" style="font-size:14px;"><strong> Contact:</strong> <?php echo !empty($SALES_INVOICE->customer_address) ? $SALES_INVOICE->customer_address : '.................................' ?> - <?php echo !empty($SALES_INVOICE->customer_mobile) ? $SALES_INVOICE->customer_mobile : '.................................' ?></p>
@@ -164,7 +168,7 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                 </div>
 
                 <!-- ITEM INVOICE PRINT -->
-                <?php if ($SALES_INVOICE->invoice_type == 'INV') { ?>
+                <?php if ($SALES_INVOICE->invoice_type == 'customer' || $SALES_INVOICE->invoice_type == 'dealer') { ?>
                     <div class="table-responsive">
                         <table class="table table-centered">
                             <thead>
@@ -173,6 +177,7 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                     <th colspan="4">Item Name</th>
                                     <th>Selling Price</th>
                                     <th>Qty</th>
+                                    <th>Discount</th>
                                     <th class="text-end">Total</th>
                                 </tr>
                             </thead>
@@ -185,14 +190,17 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
 
                                 foreach ($temp_items_list as $key => $temp_items) {
                                     $key++;
-                                    $price =   $temp_items['price'];
+                                    // Use the price field, with fallback to customer_price or dealer_price
+                                    $price = $temp_items['price'] ?? 
+                                            ($SALES_INVOICE->invoice_type === 'customer' ? 
+                                                ($temp_items['customer_price'] ?? $temp_items['list_price'] ?? 0) : 
+                                                ($temp_items['dealer_price'] ?? $temp_items['price'] ?? 0));
                                     $quantity = (int) $temp_items['quantity'];
-                                    $discount_percentage = isset($temp_items['discount']) ? (float) $temp_items['discount'] : 0;
-                                    $discount_per_item = $price * ($discount_percentage / 100);
+                                    $discount_per_item = isset($temp_items['discount']) ? (float) $temp_items['discount'] : 0;
                                     $selling_price = $price * $quantity;
-                                    $line_total = $price * $quantity;
+                                    $line_total = ($price * $quantity) - $discount_per_item; // Total after discount
                                     $subtotal += $price * $quantity;
-                                    $total_discount += $discount_per_item * $quantity;
+                                    $total_discount += $discount_per_item;
                                     $ITEM_MASTER = new ItemMaster($temp_items['item_code']);
                                 ?>
                                     <tr>
@@ -206,11 +214,12 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                         </td>
                                         <td><?php echo number_format($price, 2); ?></td>
                                         <td><?php echo $quantity; ?></td>
+                                        <td><?php echo number_format($discount_per_item, 2); ?></td>
                                         <td class="text-end"><?php echo number_format($line_total, 2); ?></td>
                                     </tr>
                                 <?php } ?>
                                 <tr>
-                                    <td colspan="5" rowspan="5" style="vertical-align:top;  ">
+                                    <td colspan="5" rowspan="6" style="vertical-align:top;  ">
                                         <h6 style="margin-top:8px;"><strong>Terms & Conditions:</strong></h6>
                                         <ul style="padding-left:20px;margin-bottom:0;">
                                             <?php
@@ -239,11 +248,11 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                     <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->grand_total - $SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
                                 </tr>
                                 <?php endif; ?>
-                                <tr hidden>
-                                    <td colspan="2" class="text-end font-weight-bold">Discount:-</td>
-                                    <td colspan="2" class="text-end font-weight-bold">- <?php echo number_format($total_discount, 2); ?></td>
+                                <tr>
+                                    <td colspan="2" class="text-end font-weight-bold"><strong>Discount:-</strong></td>
+                                    <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($total_discount, 2); ?></strong></td>
                                 </tr>
-                                <tr hidden>
+                                <tr>
                                     <td colspan="2" class="text-end"><strong>Net Amount:-</strong></td>
                                     <td colspan="2" class="text-end"><strong><?php echo number_format($subtotal - $total_discount, 2); ?></strong></td>
                                 </tr>
@@ -262,6 +271,7 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                         </table>
                     </div>
                 <?php } ?>
+
 
                 <!-- DAG INVOICE PRINT -->
                 <?php if ($SALES_INVOICE->invoice_type == 'DAG') { ?>
@@ -309,7 +319,11 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
 
                                 foreach ($temp_items_list as $key => $temp_items) {
                                     $key++;
-                                    $price = $temp_items['price'];
+                                    // Use the price field, with fallback to customer_price or dealer_price
+                                    $price = $temp_items['price'] ?? 
+                                            ($SALES_INVOICE->invoice_type === 'customer' ? 
+                                                ($temp_items['customer_price'] ?? $temp_items['list_price'] ?? 0) : 
+                                                ($temp_items['dealer_price'] ?? $temp_items['price'] ?? 0));
                                     $cost = $temp_items['cost'];
                                     $quantity = (int) $temp_items['quantity'];
                                     $line_total = $price * $quantity;
