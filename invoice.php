@@ -34,6 +34,9 @@ if (!$SALES_INVOICE->id) {
 }
 
 $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
+
+$MarketingExecutive = new MarketingExecutive($SALES_INVOICE->marketing_executive_id);
+
 ?>
 <html lang="en">
 
@@ -145,7 +148,7 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                     </div>
                     <div class="col-md-4 text-sm-start text-md-start">
                         <h3 style="font-weight:bold;font-size:18px;">
-                            <?php 
+                            <?php
                             $invoice_type_text = ($SALES_INVOICE->invoice_type == 'customer') ? 'CUSTOMER' : (($SALES_INVOICE->invoice_type == 'dealer') ? 'DEALER' : 'REGULAR');
                             $payment_type_text = ($SALES_INVOICE->payment_type == 1) ? "CASH" : "CREDIT";
                             echo $payment_type_text . " " . $invoice_type_text . " SALES INVOICE";
@@ -191,10 +194,9 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                 foreach ($temp_items_list as $key => $temp_items) {
                                     $key++;
                                     // Use the price field, with fallback to customer_price or dealer_price
-                                    $price = $temp_items['price'] ?? 
-                                            ($SALES_INVOICE->invoice_type === 'customer' ? 
-                                                ($temp_items['customer_price'] ?? $temp_items['list_price'] ?? 0) : 
-                                                ($temp_items['dealer_price'] ?? $temp_items['price'] ?? 0));
+                                    $price = $temp_items['price'] ??
+                                        ($SALES_INVOICE->invoice_type === 'customer' ?
+                                            ($temp_items['customer_price'] ?? $temp_items['list_price'] ?? 0) : ($temp_items['dealer_price'] ?? $temp_items['price'] ?? 0));
                                     $quantity = (int) $temp_items['quantity'];
                                     $discount_per_item = isset($temp_items['discount']) ? (float) $temp_items['discount'] : 0;
                                     $selling_price = $price * $quantity;
@@ -206,11 +208,11 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                     <tr>
                                         <td>0<?php echo $key; ?></td>
                                         <td colspan="4"><?php echo $ITEM_MASTER->code . ' ' . $temp_items['display_name']; ?>
-                                        <?php if (!empty($temp_items['next_service_date']) && $temp_items['next_service_date'] !== '0000-00-00' && strtotime($temp_items['next_service_date']) > 0): ?>
-                                            <br><strong>Next Service Date:</strong> <?php echo date('d M, Y', strtotime($temp_items['next_service_date'])); ?>
-                                        <?php elseif (!empty($temp_items['current_km'])): ?>
-                                            <br><strong>Next Service Km:</strong> <?php echo ($temp_items['current_km'] + 500); ?>
-                                        <?php endif; ?>
+                                            <?php if (!empty($temp_items['next_service_date']) && $temp_items['next_service_date'] !== '0000-00-00' && strtotime($temp_items['next_service_date']) > 0): ?>
+                                                <br><strong>Next Service Date:</strong> <?php echo date('d M, Y', strtotime($temp_items['next_service_date'])); ?>
+                                            <?php elseif (!empty($temp_items['current_km'])): ?>
+                                                <br><strong>Next Service Km:</strong> <?php echo ($temp_items['current_km'] + 500); ?>
+                                            <?php endif; ?>
                                         </td>
                                         <td><?php echo number_format($price, 2); ?></td>
                                         <td><?php echo $quantity; ?></td>
@@ -234,19 +236,25 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                             }
                                             ?>
                                         </ul>
+                                        <ul style="padding-left:20px;margin-top:7px;list-style-type: none;">
+                                            <li style="margin-bottom:0;"><strong>Marketing Executive:- <?php echo $MarketingExecutive->full_name; ?></strong></li>
+                                        </ul>
                                     </td>
                                     <td colspan="2" class="text-end font-weight-bold"><strong>Gross Amount:-</strong></td>
                                     <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($subtotal, 2); ?></strong></td>
                                 </tr>
-                                <?php if ($SALES_INVOICE->payment_type == 2): // Credit payment ?>
-                                <tr>
-                                    <td colspan="2" class="text-end font-weight-bold"><strong>Paid Amount:-</strong></td>
-                                    <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" class="text-end font-weight-bold"><strong>Payable Amount:-</strong></td>
-                                    <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->grand_total - $SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
-                                </tr>
+
+
+                                <?php if ($SALES_INVOICE->payment_type == 2): // Credit payment 
+                                ?>
+                                    <tr>
+                                        <td colspan="2" class="text-end font-weight-bold"><strong>Paid Amount:-</strong></td>
+                                        <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2" class="text-end font-weight-bold"><strong>Payable Amount:-</strong></td>
+                                        <td colspan="2" class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->grand_total - $SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
+                                    </tr>
                                 <?php endif; ?>
                                 <tr>
                                     <td colspan="2" class="text-end font-weight-bold"><strong>Discount:-</strong></td>
@@ -261,7 +269,7 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                         <table style="width:100%;">
                                             <tr>
                                                 <td style="text-align:center;">_________________________<br><strong>Prepared By</strong></td>
-                                                <td style="text-align:center;">_________________________<br><strong>Approved By</strong></td>
+                                                <td style="text-align:center;">_________________________<br><strong>Ap proved By</strong></td>
                                                 <td style="text-align:center;">_________________________<br><strong>Received By</strong></td>
                                             </tr>
                                         </table>
@@ -320,10 +328,9 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                 foreach ($temp_items_list as $key => $temp_items) {
                                     $key++;
                                     // Use the price field, with fallback to customer_price or dealer_price
-                                    $price = $temp_items['price'] ?? 
-                                            ($SALES_INVOICE->invoice_type === 'customer' ? 
-                                                ($temp_items['customer_price'] ?? $temp_items['list_price'] ?? 0) : 
-                                                ($temp_items['dealer_price'] ?? $temp_items['price'] ?? 0));
+                                    $price = $temp_items['price'] ??
+                                        ($SALES_INVOICE->invoice_type === 'customer' ?
+                                            ($temp_items['customer_price'] ?? $temp_items['list_price'] ?? 0) : ($temp_items['dealer_price'] ?? $temp_items['price'] ?? 0));
                                     $cost = $temp_items['cost'];
                                     $quantity = (int) $temp_items['quantity'];
                                     $line_total = $price * $quantity;
@@ -378,15 +385,16 @@ $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
                                     <td colspan="2" class="text-end font-weight-bold"><strong>Gross Amount:-</strong></td>
                                     <td class="text-end font-weight-bold"><strong><?php echo number_format($subtotal, 2); ?></strong></td>
                                 </tr>
-                                <?php if ($SALES_INVOICE->payment_type == 2): // Credit payment ?>
-                                <tr>
-                                    <td colspan="2" class="text-end font-weight-bold"><strong>Paid Amount:-</strong></td>
-                                    <td class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" class="text-end font-weight-bold"><strong>Payable Amount:-</strong></td>
-                                    <td class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->grand_total - $SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
-                                </tr>
+                                <?php if ($SALES_INVOICE->payment_type == 2): // Credit payment 
+                                ?>
+                                    <tr>
+                                        <td colspan="2" class="text-end font-weight-bold"><strong>Paid Amount:-</strong></td>
+                                        <td class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2" class="text-end font-weight-bold"><strong>Payable Amount:-</strong></td>
+                                        <td class="text-end font-weight-bold"><strong><?php echo number_format($SALES_INVOICE->grand_total - $SALES_INVOICE->outstanding_settle_amount, 2); ?></strong></td>
+                                    </tr>
                                 <?php endif; ?>
                                 <tr>
                                     <td colspan="2" class="text-end font-weight-bold">Total Cost:-</td>
