@@ -271,7 +271,6 @@ if (isset($_POST['filter'])) {
     exit;
 }
 
-
 // search by customer
 if (isset($_POST['query'])) {
     $search = $_POST['query'];

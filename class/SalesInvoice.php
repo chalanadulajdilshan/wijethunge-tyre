@@ -83,12 +83,20 @@ class SalesInvoice
             '{$this->tax}', '{$this->grand_total}', '{$this->outstanding_settle_amount}', '{$this->remark}', '{$this->credit_period}', '{$this->due_date}', '{$this->marketing_executive_id}'
         )";
 
-
+        $sales_executive_outstanding = new SalesExecutiveOutstanding();
 
         $db = new Database();
         $result = $db->readQuery($query);
 
         if ($result) {
+            if ($this->marketing_executive_id && $this->payment_type == 2) {
+                
+                $sales_executive_outstanding->sale_ex_id = $this->marketing_executive_id;
+                $sales_executive_outstanding->invoice_id = mysqli_insert_id($db->DB_CON);
+                $sales_executive_outstanding->customer_id = $this->customer_id;
+                $sales_executive_outstanding->amount = $this->grand_total;
+                $sales_executive_outstanding->create();
+            }
             return mysqli_insert_id($db->DB_CON);
         } else {
             return false;
@@ -123,8 +131,17 @@ class SalesInvoice
         $db = new Database();
         $result = $db->readQuery($query);
 
+        $sales_executive_outstanding = new SalesExecutiveOutstanding();
+
         if ($result) {
-            return $this->__construct($this->id);
+            if ($this->marketing_executive_id != 0 && $this->payment_type == 2) {
+                $sales_executive_outstanding->sale_ex_id = $this->marketing_executive_id;
+                $sales_executive_outstanding->invoice_id = $this->id;
+                $sales_executive_outstanding->customer_id = $this->customer_id;
+                $sales_executive_outstanding->amount = $this->grand_total;
+                $sales_executive_outstanding->update();
+            }
+                return $this->__construct($this->id);
         } else {
             return false;
         }

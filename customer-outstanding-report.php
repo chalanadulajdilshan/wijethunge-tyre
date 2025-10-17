@@ -95,86 +95,98 @@ include 'auth.php';
                                                 </div>
                                             </div>
 
-                                            <!-- Date Filter -->
-                                            <div class="col-md-6">
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <label for="fromDate" class="form-label">From Date</label>
-                                                        <div class="input-group" id="datepicker1">
-                                                            <input type="text" class="form-control date-picker" id="fromDate" name="fromDate">
-                                                            <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                                            <!-- Date Filter Section -->
+                                            <div class="col-md-8">
+                                                <div class="card border-0 shadow-sm">
+                                                    <div class="card-body p-3">
+                                                        <div class="row g-3 align-items-end">
+                                                            <div class="col-md-5">
+                                                                <label for="fromDate" class="form-label fw-semibold text-muted mb-2">From Date</label>
+                                                                <div class="input-group">
+                                                                    <input type="text" class="form-control" id="fromDate" name="fromDate" placeholder="Select start date">
+                                                                    <span class="input-group-text bg-light"><i class="mdi mdi-calendar text-primary"></i></span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-5">
+                                                                <label for="toDate" class="form-label fw-semibold text-muted mb-2">To Date</label>
+                                                                <div class="input-group">
+                                                                    <input type="text" class="form-control" id="toDate" name="toDate" placeholder="Select end date">
+                                                                    <span class="input-group-text bg-light"><i class="mdi mdi-calendar text-primary"></i></span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-2 d-grid">
+                                                                <button type="button" class="btn btn-outline-primary btn-sm mb-2" id="setToday">
+                                                                    <i class="mdi mdi-calendar-today me-1"></i> Today
+                                                                </button>
+                                                                <button id="exportToPdf" class="btn btn-warning btn-sm">
+                                                                    <i class="fas fa-file-pdf me-1"></i> Export PDF
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mt-2">
+                                                            <small class="text-muted"><i class="mdi mdi-information-outline me-1"></i> Leave dates empty to show all records</small>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-4">
-                                                        <label for="toDate" class="form-label">To Date</label>
-                                                        <div class="input-group" id="datepicker2">
-                                                            <input type="text" class="form-control date-picker" id="toDate" name="toDate">
-                                                            <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-2 d-flex align-items-end">
-                                                        <button type="button" class="btn btn-sm btn-outline-primary" id="setToday">Today</button>
-                                                    </div>
-                                                </div>
-                                                <small class="text-muted">Leave dates empty to show all records</small>
-                                            </div>
-
-                                            <div class="row mt-3">
-                                                <div class="col-md-12">
-                                                    <button type="button" class="btn btn-primary me-1" id="searchBtn">
-                                                        <i class="mdi mdi-magnify me-1"></i> Search
-                                                    </button>
-                                                    <button type="button" class="btn btn-secondary" id="resetBtn">
-                                                        <i class="mdi mdi-refresh me-1"></i> Reset
-                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
-                                    </form>
+
+                                        <div class="row mt-3">
+                                            <div class="col-md-12">
+                                                <button type="button" class="btn btn-primary me-1" id="searchBtn">
+                                                    <i class="mdi mdi-magnify me-1"></i> Search
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" id="resetBtn">
+                                                    <i class="mdi mdi-refresh me-1"></i> Reset
+                                                </button>
+                                            </div>
+                                        </div>
                                 </div>
+                                </form>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-body">
-                                    <table id="reportTable" class="table table-bordered dt-responsive nowrap w-100">
-                                        <thead>
-                                            <tr>
-                                                <th>Invoice No</th>
-                                                <th>Customer</th>
-                                                <th>Date</th>
-                                                <th>Due Date</th>
-                                                <th class="text-end">Invoice Amount</th>
-                                                <th class="text-end">Paid Amount</th>
-                                                <th class="text-end outstanding-column">Payable Outstanding</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="reportTableBody">
-                                            <!-- Data will be loaded via AJAX -->
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <th colspan="4" class="text-end">Total:</th>
-                                                <td id="totalInvoice" class="text-danger text-end">0.00</td>
-                                                <td id="totalPaid" class="text-danger text-end">0.00</td>
-                                                <td id="totalOutstanding" class="text-danger text-end outstanding-column">0.00</td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <table id="reportTable" class="table table-bordered dt-responsive nowrap w-100">
+                                    <thead>
+                                        <tr>
+                                            <th>Invoice No</th>
+                                            <th>Customer</th>
+                                            <th>Date</th>
+                                            <th>Due Date</th>
+                                            <th class="text-end">Invoice Amount</th>
+                                            <th class="text-end">Paid Amount</th>
+                                            <th class="text-end outstanding-column">Payable Outstanding</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTableBody">
+                                        <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="4" class="text-end">Total:</th>
+                                            <td id="totalInvoice" class="text-danger text-end">0.00</td>
+                                            <td id="totalPaid" class="text-danger text-end">0.00</td>
+                                            <td id="totalOutstanding" class="text-danger text-end outstanding-column">0.00</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
                             </div>
                         </div>
                     </div>
-                </div> <!-- container-fluid -->
-            </div>
-            <!-- End Page-content -->
-
-            <?php include 'footer.php'; ?>
+                </div>
+            </div> <!-- container-fluid -->
         </div>
-        <!-- end main content-->
+        <!-- End Page-content -->
+
+        <?php include 'footer.php'; ?>
+    </div>
+    <!-- end main content-->
     </div>
     <!-- END layout-wrapper -->
 
@@ -212,7 +224,7 @@ include 'auth.php';
                 e.preventDefault();
                 const today = new Date();
                 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                
+
                 $('#toDate').datepicker('setDate', today);
                 $('#fromDate').datepicker('setDate', firstDay);
             });
@@ -222,7 +234,7 @@ include 'auth.php';
                 e.preventDefault();
                 const customerId = $(this).data('id');
                 const customerCode = $(this).data('code');
-                
+
                 $('#customer_id').val(customerId);
                 $('#customer_code').val(customerCode);
                 $('#customerModal').modal('hide');
@@ -243,7 +255,7 @@ include 'auth.php';
             $('.date-picker').change(function() {
                 const fromDate = $('#fromDate').datepicker('getDate');
                 const toDate = $('#toDate').datepicker('getDate');
-                
+
                 if (fromDate && toDate && fromDate > toDate) {
                     alert('From date cannot be after To date');
                     $(this).val('');
