@@ -234,6 +234,8 @@ jQuery(document).ready(function () {
         $('#whatsapp_number').val($(this).data('whatsapp_number'));
         $('#target_month').val($(this).data('target-month'));
         $('#target').val($(this).data('target'));
+        $('#joined_date').val($(this).data('joined-date'));
+        $('#remark').val($(this).data('remark'));
 
         if ($(this).data('active') == 1) {
             $('#is_active').prop('checked', true);

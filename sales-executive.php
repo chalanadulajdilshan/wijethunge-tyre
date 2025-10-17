@@ -246,6 +246,8 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                                             data-whatsapp_number="<?php echo htmlspecialchars($executive['whatsapp_number']); ?>"
                                             data-target-month="<?php echo htmlspecialchars($executive['target_month']); ?>"
                                             data-target="<?php echo htmlspecialchars($executive['target']); ?>"
+                                            data-joined-date="<?php echo htmlspecialchars($executive['joined_date']); ?>"
+                                            data-remark="<?php echo htmlspecialchars($executive['remark']); ?>"
                                             data-active="<?php echo $executive['is_active']; ?>">
 
                                             <td><?php echo $key; ?></td>
