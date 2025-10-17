@@ -839,9 +839,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'export_stock') {
                 'code' => $item['code'] ?: '',
                 'name' => $item['name'] ?: '',
                 'category' => isset($category->name) ? $category->name : '',
-                'list_price' => (float)($item['list_price'] ?: 0),
+                'list_price' => (float)($item['customer_price'] ?: 0),
                 'discount' => (float)($item['discount'] ?: 0),
-                'invoice_price' => (float)($item['invoice_price'] ?: 0),
+                'invoice_price' => (float)($item['dealer_price'] ?: 0),
                 'quantity' => (float)($item['total_qty'] ?: 0),
                 'stock_status' => 'In Stock',
                 'arn_lots' => []
@@ -885,8 +885,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'export_stock') {
                     'arn_no' => $arn->arn_no ?? '',
                     'cost' => (float)$lot['cost'],
                     'qty' => (float)$lot['qty'],
-                    'list_price' => (float)$lot['list_price'],
-                    'invoice_price' => (float)$lot['invoice_price']
+                    'list_price' => (float)$lot['customer_price'],
+                    'invoice_price' => (float)$lot['dealer_price']
                 ];
             }
 

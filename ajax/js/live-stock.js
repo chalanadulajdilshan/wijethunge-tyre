@@ -644,8 +644,8 @@ jQuery(document).ready(function () {
           <th>Item Code</th>
           <th>Description</th>
           <th>Category</th>
-          <th class="text-right">Selling</th>
-          <th class="text-right">Invoice</th>
+          <th class="text-right">Customer Price</th>
+          <th class="text-right">Dealer Price</th>
           <th class="text-right">Qty</th>
           <th class="text-center">Status</th>
         </tr>
@@ -696,8 +696,8 @@ jQuery(document).ready(function () {
                   <th class="text-right">Cost</th>
                   <th class="text-right">Qty</th>
                   <th class="text-right">Total Cost</th>
-                  <th class="text-right">List Price</th>
-                  <th class="text-right">Invoice</th>
+                  <th class="text-right">Customer Price</th>
+                  <th class="text-right">Dealer Price</th>
                   <th class="text-right">Total</th>
                 </tr>
               </thead>
@@ -949,8 +949,8 @@ jQuery(document).ready(function () {
                   <th>Item Code</th>
                   <th>Description</th>
                   <th>Category</th>
-                  <th class="text-right">Selling</th>
-                  <th class="text-right">Invoice</th>
+                  <th class="text-right">Customer Price</th>
+                  <th class="text-right">Dealer Price</th>
                   <th class="text-right">Qty</th>
                   <th class="text-center">Status</th>
               </tr>
@@ -1010,8 +1010,8 @@ jQuery(document).ready(function () {
                                   <th class="text-right">Cost</th>
                                   <th class="text-right">Qty</th>
                                   <th class="text-right">Total Cost</th>
-                                  <th class="text-right">List Price</th>
-                                  <th class="text-right">Invoice</th>
+                                  <th class="text-right">Customer Price</th>
+                                  <th class="text-right">Dealer Price</th>
                                   <th class="text-right">Total</th>
                               </tr>
                           </thead>
