@@ -64,6 +64,11 @@ try {
                                     <!-- Department Filter -->
                                     <div class="row mb-3">
                                         <div class="col-md-3">
+                                            <button id="exportAllStock" class="btn btn-success">Export All Stock</button>
+                                            <button id="exportToExcel" class="btn btn-primary">Export to Excel</button>
+                                            <button id="exportToPdf" class="btn btn-warning">Export to PDF</button>
+                                        </div>
+                                        <div class="col-md-3">
                                             <label for="filter_department_id" class="form-label">Filter by Department</label>
                                             <select class="form-control select2" id="filter_department_id" name="filter_department_id">
                                                 <option value="all" selected>Show All Departments</option>
