@@ -26,6 +26,7 @@ class SalesInvoice
     public $outstanding_settle_amount;
     public $remark;
     public $status;
+    public $marketing_executive_id;
     public $credit_period;
     public $due_date;
 
@@ -62,6 +63,7 @@ class SalesInvoice
                 $this->outstanding_settle_amount = $result['outstanding_settle_amount'];
                 $this->remark = $result['remark'];
                 $this->status = $result['status'];
+                $this->marketing_executive_id = $result['marketing_executive_id'];
                 $this->credit_period = $result['credit_period'];
                 $this->due_date = $result['due_date'];
             }
@@ -74,11 +76,11 @@ class SalesInvoice
         $query = "INSERT INTO `sales_invoice` (
             `ref_id`,`invoice_type`,`invoice_no`, `invoice_date`, `company_id`, `customer_id`, `customer_name`, `customer_mobile`, `customer_address`, `recommended_person`, `department_id`, 
             `sale_type`, `discount_type`,`final_cost`, `payment_type`, `sub_total`, `discount`, 
-            `tax`, `grand_total`, `outstanding_settle_amount`, `remark`, `credit_period`, `due_date`
+            `tax`, `grand_total`, `outstanding_settle_amount`, `remark`, `credit_period`, `due_date`, `marketing_executive_id`
         ) VALUES (
             '{$this->ref_id}','{$this->invoice_type}', '{$this->invoice_no}', '{$this->invoice_date}', '{$this->company_id}', '{$this->customer_id}', '{$this->customer_name}', '{$this->customer_mobile}', '{$this->customer_address}', '{$this->recommended_person}', '{$this->department_id}', 
             '{$this->sale_type}', '{$this->discount_type}', '{$this->final_cost}','{$this->payment_type}', '{$this->sub_total}', '{$this->discount}', 
-            '{$this->tax}', '{$this->grand_total}', '{$this->outstanding_settle_amount}', '{$this->remark}', '{$this->credit_period}', '{$this->due_date}'
+            '{$this->tax}', '{$this->grand_total}', '{$this->outstanding_settle_amount}', '{$this->remark}', '{$this->credit_period}', '{$this->due_date}', '{$this->marketing_executive_id}'
         )";
 
 
@@ -113,6 +115,7 @@ class SalesInvoice
             `sub_total` = '{$this->sub_total}', 
             `discount` = '{$this->discount}', 
             `tax` = '{$this->tax}', 
+            `marketing_executive_id` = '{$this->marketing_executive_id}', 
             `grand_total` = '{$this->grand_total}', 
             `remark` = '{$this->remark}' 
             WHERE `id` = '{$this->id}'";

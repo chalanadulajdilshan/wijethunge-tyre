@@ -649,6 +649,7 @@ jQuery(document).ready(function () {
         $("#customer_address").val(response.customer_address || "");
         $("#customer_mobile").val(response.customer_mobile || "");
         $("#recommended_person").val(response.recommended_person || "");
+        $("#marketing_executive").val(response.marketing_executive || "");
 
         // Set department
         $("#department_id").val(response.department_id || "").trigger("change");
