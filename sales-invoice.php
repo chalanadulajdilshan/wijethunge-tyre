@@ -234,13 +234,30 @@ include './auth.php';
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-2">
+                                            <div class="col-md-2" style="display: none;">
                                                 <label for="recommendedPerson" class="form-label">Recommended Person</label>
                                                 <div class="input-group mb-3">
                                                     <input id="recommended_person" name="recommended_person" type="text"
                                                         class="form-control" placeholder="Enter Recommended Person">
                                                 </div>
                                             </div>
+                                            <div class="col-md-2">
+                                                <label for="marketingExecutive" class="form-label">Marketing Executive</label>
+                                                <div class="input-group mb-3">
+                                                    <select id="marketing_executive" name="marketing_executive" class="form-select">
+                                                        <option value="">Select Marketing Executive</option>
+                                                        <?php
+                                                        $MARKETING_EXECUTIVE = new MarketingExecutive(NULL);
+                                                        foreach ($MARKETING_EXECUTIVE->all() as $marketing_executive) {
+                                                        ?>
+                                                            <option value="<?php echo $marketing_executive['id'] ?>">
+                                                                <?php echo $marketing_executive['full_name'] ?>
+                                                            </option>
+                                                        <?php } ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                                            
 
                                             <div class="col-md-1" style="display: none;">
                                                 <label for="vat_type" class="form-label">Vat Type</label>

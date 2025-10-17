@@ -109,6 +109,7 @@ if (isset($_POST['create'])) {
     $SALES_INVOICE->department_id = $_POST['department_id'];
     $SALES_INVOICE->sale_type = $_POST['sales_type'];
     $SALES_INVOICE->final_cost = $final_cost;
+    $SALES_INVOICE->marketing_executive_id = $_POST['marketing_executive'];
 
     $SALES_INVOICE->payment_type = $paymentType;
     $SALES_INVOICE->sub_total = $totalSubTotal;
@@ -300,7 +301,7 @@ if (isset($_POST['update'])) {
     $SALES_INVOICE->customer_mobile = $_POST['customer_mobile'];
     $SALES_INVOICE->customer_address = ucwords(strtolower(trim($_POST['customer_address'])));
     $SALES_INVOICE->recommended_person = isset($_POST['recommended_person']) ? ucwords(strtolower(trim($_POST['recommended_person']))) : null;
-
+    $SALES_INVOICE->marketing_executive_id = $_POST['marketing_executive'];
 
     // Attempt to update the invoice
     $result = $SALES_INVOICE->update();
@@ -341,6 +342,7 @@ if (isset($_POST['get_by_id'])) {
     $response['customer_address'] = $CUSTOMER_MASTER->address;
     $response['customer_mobile'] = $CUSTOMER_MASTER->mobile_number;
     $response['recommended_person'] = $response['recommended_person'] ?? null;
+    $response['marketing_executive'] = $response['marketing_executive_id'] ?? null;
 
     echo json_encode($response);
     exit;
