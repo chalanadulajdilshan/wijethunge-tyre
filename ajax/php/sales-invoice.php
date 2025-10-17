@@ -474,6 +474,9 @@ if (isset($_POST['action']) && $_POST['action'] == 'cancel') {
         $AUDIT_LOG->user_id = $_SESSION['id'];
         $AUDIT_LOG->created_at = date("Y-m-d H:i:s");
         $AUDIT_LOG->create();
+        
+        $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
+        $CUSTOMER_MASTER->updateCustomerOutstanding($SALES_INVOICE->customer_id, $SALES_INVOICE->grand_total, false);
 
         echo json_encode(['status' => 'success', 'message' => 'Invoice cancelled successfully']);
     } else {
