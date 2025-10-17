@@ -122,7 +122,7 @@ if (isset($_POST['create'])) {
 
     $DOCUMENT_TRACKING = new DocumentTracking(null);
     $DOCUMENT_TRACKING->incrementDocumentId('item');
-    
+
     if ($res) {
         $result = [
             "status" => 'success'
@@ -256,8 +256,8 @@ if (isset($_POST['filter_by_invoice'])) {
 }
 
 if (isset($_POST['filter'])) {
-    
-    
+
+
     $ITEM_MASTER = new ItemMaster();
     $response = $ITEM_MASTER->fetchForDataTable($_REQUEST);
 
@@ -448,12 +448,12 @@ if (isset($_POST['action']) && $_POST['action'] === 'debug_brands') {
         $db = new Database();
         $brandQuery = "SELECT id, name FROM brands ORDER BY id ASC";
         $result = $db->readQuery($brandQuery);
-        
+
         $brands = [];
         while ($row = mysqli_fetch_assoc($result)) {
             $brands[] = $row;
         }
-        
+
         echo json_encode(['status' => 'success', 'brands' => $brands]);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
@@ -467,12 +467,12 @@ if (isset($_POST['action']) && $_POST['action'] === 'debug_groups') {
         $db = new Database();
         $groupQuery = "SELECT id, name FROM group_master ORDER BY id ASC";
         $result = $db->readQuery($groupQuery);
-        
+
         $groups = [];
         while ($row = mysqli_fetch_assoc($result)) {
             $groups[] = $row;
         }
-        
+
         echo json_encode(['status' => 'success', 'groups' => $groups]);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
@@ -486,12 +486,12 @@ if (isset($_POST['action']) && $_POST['action'] === 'debug_categories') {
         $db = new Database();
         $categoryQuery = "SELECT id, name FROM category_master ORDER BY id ASC";
         $result = $db->readQuery($categoryQuery);
-        
+
         $categories = [];
         while ($row = mysqli_fetch_assoc($result)) {
             $categories[] = $row;
         }
-        
+
         echo json_encode(['status' => 'success', 'categories' => $categories]);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
@@ -505,12 +505,12 @@ if (isset($_POST['action']) && $_POST['action'] === 'debug_stock_types') {
         $db = new Database();
         $stockTypeQuery = "SELECT id, name FROM stock_type ORDER BY id ASC";
         $result = $db->readQuery($stockTypeQuery);
-        
+
         $stock_types = [];
         while ($row = mysqli_fetch_assoc($result)) {
             $stock_types[] = $row;
         }
-        
+
         echo json_encode(['status' => 'success', 'stock_types' => $stock_types]);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
@@ -523,25 +523,25 @@ if (isset($_POST['upload_excel']) && isset($_FILES['excelFile'])) {
     try {
         $uploadedFile = $_FILES['excelFile'];
         $skipDuplicates = isset($_POST['skipDuplicates']) ? (bool)$_POST['skipDuplicates'] : true;
-        
+
         // Validate file
         if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
             throw new Exception('File upload error');
         }
-        
+
         $fileExtension = strtolower(pathinfo($uploadedFile['name'], PATHINFO_EXTENSION));
         if (!in_array($fileExtension, ['xlsx', 'xls', 'csv'])) {
             throw new Exception('Invalid file format. Please upload Excel (.xlsx, .xls) or CSV file');
         }
-        
+
         // Move uploaded file to temporary location
         $tempFile = sys_get_temp_dir() . '/' . uniqid() . '.' . $fileExtension;
         if (!move_uploaded_file($uploadedFile['tmp_name'], $tempFile)) {
             throw new Exception('Failed to process uploaded file');
         }
-        
+
         $items = [];
-        
+
         // Process CSV file (simplified approach)
         if ($fileExtension === 'csv') {
             $items = parseCSVFile($tempFile);
@@ -549,24 +549,24 @@ if (isset($_POST['upload_excel']) && isset($_FILES['excelFile'])) {
             // Convert Excel to CSV for processing (simple approach)
             throw new Exception('Excel files not supported yet. Please save your file as CSV format and upload again.');
         }
-        
+
         if (empty($items)) {
             throw new Exception('No valid data found in the uploaded file');
         }
-        
+
         // Process items with ItemMaster
         $itemMaster = new ItemMaster();
         $result = $itemMaster->bulkInsert($items, $skipDuplicates);
-        
+
         // Update document tracking with the number of items inserted
         if ($result['inserted'] > 0) {
             $DOCUMENT_TRACKING = new DocumentTracking(null);
             $DOCUMENT_TRACKING->incrementDocumentId('item', $result['inserted']);
         }
-        
+
         // Clean up temporary file
         unlink($tempFile);
-        
+
         $message = "Successfully processed {$result['inserted']} items";
         if ($result['skipped'] > 0) {
             $message .= ", skipped {$result['skipped']} duplicates";
@@ -577,19 +577,18 @@ if (isset($_POST['upload_excel']) && isset($_FILES['excelFile'])) {
                 $message .= " and " . (count($result['errors']) - 3) . " more...";
             }
         }
-        
+
         echo json_encode([
             'status' => 'success',
             'message' => $message,
             'details' => $result
         ]);
-        
     } catch (Exception $e) {
         // Clean up temporary file if it exists
         if (isset($tempFile) && file_exists($tempFile)) {
             unlink($tempFile);
         }
-        
+
         echo json_encode([
             'status' => 'error',
             'message' => $e->getMessage()
@@ -598,48 +597,50 @@ if (isset($_POST['upload_excel']) && isset($_FILES['excelFile'])) {
     exit();
 }
 
-function parseCSVFile($filePath) {
+function parseCSVFile($filePath)
+{
     $items = [];
     $handle = fopen($filePath, 'r');
-    
+
     if ($handle === false) {
         throw new Exception('Cannot read CSV file');
     }
-    
+
     // Read header row
     $headers = fgetcsv($handle);
     if (!$headers) {
         fclose($handle);
         throw new Exception('Invalid CSV format - no headers found');
     }
-    
+
     // Map headers to expected fields (case-insensitive)
     $headerMap = mapHeaders($headers);
-    
+
     $rowIndex = 1;
     while (($row = fgetcsv($handle)) !== false) {
         $rowIndex++;
         if (count($row) < count($headers)) {
             continue; // Skip incomplete rows
         }
-        
+
         $item = [];
         foreach ($headerMap as $csvIndex => $fieldName) {
             $item[$fieldName] = isset($row[$csvIndex]) ? trim($row[$csvIndex]) : '';
         }
-        
+
         // Validate and convert data types
         $processedItem = processItemData($item, $rowIndex);
         if ($processedItem) {
             $items[] = $processedItem;
         }
     }
-    
+
     fclose($handle);
     return $items;
 }
 
-function mapHeaders($headers) {
+function mapHeaders($headers)
+{
     $headerMap = [];
     $fieldMappings = [
         'code' => ['code', 'item_code', 'item code', 'product_code'],
@@ -658,7 +659,7 @@ function mapHeaders($headers) {
         'discount' => ['discount', 'discount_percent', 'discount %'],
         'is_active' => ['is_active', 'active', 'status']
     ];
-    
+
     foreach ($headers as $index => $header) {
         $normalizedHeader = strtolower(trim($header));
         foreach ($fieldMappings as $field => $possibleNames) {
@@ -668,19 +669,20 @@ function mapHeaders($headers) {
             }
         }
     }
-    
+
     return $headerMap;
 }
 
-function processItemData($item, $rowIndex) {
+function processItemData($item, $rowIndex)
+{
     // Skip empty rows
     if (empty($item['name'])) {
         return null;
     }
-    
+
     // Get database references for lookups
     $db = new Database();
-    
+
     // Handle brand - accept ID directly, lookup by name, or extract from item name
     if (!empty($item['brand'])) {
         if (is_numeric($item['brand'])) {
@@ -707,7 +709,7 @@ function processItemData($item, $rowIndex) {
         // If brand is empty, try to extract it from the first word of item name
         $nameParts = explode(' ', trim($item['name']));
         $potentialBrand = $nameParts[0];
-        
+
         if (!empty($potentialBrand)) {
             // Look up the extracted brand name
             $brandName = mysqli_real_escape_string($db->DB_CON, $potentialBrand);
@@ -720,7 +722,7 @@ function processItemData($item, $rowIndex) {
             }
         }
     }
-    
+
     // Handle group - accept ID directly or lookup by name
     if (!empty($item['group'])) {
         if (is_numeric($item['group'])) {
@@ -744,7 +746,7 @@ function processItemData($item, $rowIndex) {
             }
         }
     }
-    
+
     // Handle category - accept ID directly or lookup by name
     if (!empty($item['category'])) {
         if (is_numeric($item['category'])) {
@@ -768,7 +770,7 @@ function processItemData($item, $rowIndex) {
             }
         }
     }
-    
+
     // Handle stock type - accept ID directly or lookup by name
     if (!empty($item['stock_type'])) {
         if (is_numeric($item['stock_type'])) {
@@ -792,12 +794,114 @@ function processItemData($item, $rowIndex) {
             }
         }
     }
-    
+
     // Convert active status
     if (isset($item['is_active'])) {
         $activeValue = strtolower(trim($item['is_active']));
         $item['is_active'] = in_array($activeValue, ['1', 'true', 'yes', 'active', 'y']) ? 1 : 0;
     }
-    
+
     return $item;
+}
+
+// Export stock data for Excel/CSV /PDF using ItemMaster class methods
+if (isset($_POST['action']) && $_POST['action'] === 'export_stock') {
+    try {
+        // Get filter parameters
+        $department_id = isset($_POST['department_id']) ? $_POST['department_id'] : 'all';
+        $status = isset($_POST['status']) ? (int)$_POST['status'] : 1;
+        $stock_only = isset($_POST['stock_only']) ? (int)$_POST['stock_only'] : 1;
+
+        $items = [];
+
+        if ($department_id !== 'all' && $department_id !== '' && $department_id !== null) {
+            // Use ItemMaster class method for specific department
+            $dept_id = (int)$department_id;
+            $items = ItemMaster::getItemsByDepartmentAndStock($dept_id, 1, '');
+        } else {
+            // Use ItemMaster class method for all items with stock
+            $all_items = ItemMaster::getItemsWithStock();
+
+            // Filter for active items only
+            foreach ($all_items as $item) {
+                if ($item['is_active'] == $status) {
+                    $items[] = $item;
+                }
+            }
+        }
+
+        // Transform data for export format
+        $export_data = [];
+        foreach ($items as $item) {
+            $category = new CategoryMaster($item['category']);
+            $export_item = [
+                'id' => $item['id'],
+                'code' => $item['code'] ?: '',
+                'name' => $item['name'] ?: '',
+                'category' => isset($category->name) ? $category->name : '',
+                'list_price' => (float)($item['customer_price'] ?: 0),
+                'discount' => (float)($item['discount'] ?: 0),
+                'invoice_price' => (float)($item['dealer_price'] ?: 0),
+                'quantity' => (float)($item['total_qty'] ?: 0),
+                'stock_status' => 'In Stock',
+                'arn_lots' => []
+            ];
+
+            // Calculate dealer price if not using invoice_price
+            if ($export_item['invoice_price'] <= 0 && $export_item['list_price'] && $export_item['discount']) {
+                $export_item['invoice_price'] = (float)$export_item['list_price'] * (1 - (float)$export_item['discount'] / 100);
+            }
+
+            // Determine stock status
+            $reorder_level = (float)($item['re_order_level'] ?: 0);
+            if ($export_item['quantity'] <= 0) {
+                $export_item['stock_status'] = 'Out of Stock';
+            } elseif ($export_item['quantity'] <= $reorder_level) {
+                $export_item['stock_status'] = 'Re-order';
+            }
+
+            // Get ARN lots for this item using StockItemTmp class
+            $stockTmp = new StockItemTmp();
+            $item_id = (int)$item['id'];
+
+            if ($department_id !== 'all' && $department_id !== '' && $department_id !== null) {
+                // Get ARN lots for specific department
+                $lots = $stockTmp->getByItemIdAndDepartment($item_id, (int)$department_id);
+            } else {
+                // Get all ARN lots for the item
+                $lots = $stockTmp->getByItemId($item_id);
+            }
+
+            foreach ($lots as $lot) {
+                // Skip zero or negative quantity lots
+                if ((float)$lot['qty'] <= 0) {
+                    continue;
+                }
+
+                // Get ARN details
+                $arn = new ArnMaster($lot['arn_id']);
+
+                $export_item['arn_lots'][] = [
+                    'arn_no' => $arn->arn_no ?? '',
+                    'cost' => (float)$lot['cost'],
+                    'qty' => (float)$lot['qty'],
+                    'list_price' => (float)$lot['customer_price'],
+                    'invoice_price' => (float)$lot['dealer_price']
+                ];
+            }
+
+            $export_data[] = $export_item;
+        }
+
+        // Return data for export
+        echo json_encode([
+            'status' => 'success',
+            'data' => $export_data,
+            'export_type' => 'stock_export'
+        ]);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit();
 }
