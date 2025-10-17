@@ -70,6 +70,7 @@ class PaymentReceipt
         return $db->readQuery($query);
     }
 
+
     public function all()
     {
         $query = "SELECT `id`, `receipt_no`, `customer_id`, `entry_date`, `amount_paid`, `remark`, `created_at`
@@ -78,13 +79,13 @@ class PaymentReceipt
 
         $db = new Database();
         $result = $db->readQuery($query);
-        $array = [];
+        $array_res = array();
 
         while ($row = mysqli_fetch_array($result)) {
-            array_push($array, $row);
+            array_push($array_res, $row);
         }
 
-        return $array;
+        return $array_res;
     }
 
     public function getByCustomer($customerId)
