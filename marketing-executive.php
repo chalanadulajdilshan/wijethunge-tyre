@@ -4,6 +4,12 @@ include 'class/include.php';
 include './auth.php';
 
 
+$USER = new User(NUll);
+
+// Get the last inserted package id
+$lastId = $USER->getLastID();
+$user_id = 'US00' . ($lastId + 1);
+
 $MARKETING_EXECUTIVE = new MarketingExecutive(NULL);
 
 // Get the last inserted package id
@@ -45,21 +51,21 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                             </a>
 
                             <?php if ($PERMISSIONS['add_page']): ?>
-                            <a href="#" class="btn btn-primary" id="create">
-                                <i class="uil uil-save me-1"></i> Save
-                            </a>
+                                <a href="#" class="btn btn-primary" id="create">
+                                    <i class="uil uil-save me-1"></i> Save
+                                </a>
                             <?php endif; ?>
 
                             <?php if ($PERMISSIONS['edit_page']): ?>
-                            <a href="#" class="btn btn-warning" id="update" style="display:none;">
-                                <i class="uil uil-edit me-1"></i> Update
-                            </a>
+                                <a href="#" class="btn btn-warning" id="update" style="display:none;">
+                                    <i class="uil uil-edit me-1"></i> Update
+                                </a>
                             <?php endif; ?>
 
                             <?php if ($PERMISSIONS['delete_page']): ?>
-                            <a href="#" class="btn btn-danger delete-executive">
-                                <i class="uil uil-trash-alt me-1"></i> Delete
-                            </a>
+                                <a href="#" class="btn btn-danger delete-executive">
+                                    <i class="uil uil-trash-alt me-1"></i> Delete
+                                </a>
                             <?php endif; ?>
 
                         </div>
@@ -112,6 +118,8 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                                                     <input id="code" name="code" type="text" class="form-control"
                                                         placeholder="Enter Department Code" readonly
                                                         value="<?php echo $marketing_ex_id ?>">
+
+
                                                     <button class="btn btn-info" type="button" data-bs-toggle="modal"
                                                         data-bs-target="#executivetModel">
                                                         <i class="uil uil-search me-1"></i>
@@ -163,15 +171,37 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                                                     placeholder="Target Amount">
                                             </div>
 
+                                            <!-- Commission -->
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label" for="commission">Commission</label>
+                                                <input id="commission" name="commission" type="number"
+                                                    class="form-control" placeholder="Commission Amount">
+                                            </div>
+                                            <!-- User Name -->
+                                            <div class="col-md-3">
+                                                <label class="form-label" for="user_name">User Name</label>
+
+                                                <input id="code" name="code" type="text"
+                                                    class="form-control" value="<?php echo $user_id ?>" hidden>
+                                                <input id="user_name" name="user_name" type="text"
+                                                    class="form-control" placeholder="User Name">
+                                            </div>
+                                            <!-- Password -->
+                                            <div class="col-md-3">
+                                                <label class="form-label" for="password">Password</label>
+                                                <input id="password" name="password" type="password"
+                                                    class="form-control" placeholder="Password">
+                                            </div>
+
                                             <!-- Joined Date -->
-                                            <div class="col-md-2">
+                                            <div class="col-md-3">
                                                 <label class="form-label" for="joined_date">Joined Date</label>
                                                 <input id="joined_date" name="joined_date" type="date"
                                                     class="form-control">
                                             </div>
 
                                             <!-- Active Checkbox -->
-                                            <div class="col-md-1 d-flex align-items-center">
+                                            <div class="col-md-3 d-flex align-items-center">
                                                 <div class="form-check mt-3">
                                                     <input class="form-check-input" type="checkbox" id="is_active"
                                                         name="is_active">
@@ -217,7 +247,7 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                     <div class="row">
                         <div class="col-12">
 
-                            <table  class="datatable table table-bordered dt-responsive nowrap"
+                            <table class="datatable table table-bordered dt-responsive nowrap"
                                 style="border-collapse: collapse; border-spacing: 0; width: 100%;">
                                 <thead>
                                     <tr>
@@ -237,7 +267,7 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                                     $EXEC = new MarketingExecutive(NULL);
                                     foreach ($EXEC->all() as $key => $executive) {
                                         $key++;
-                                        ?>
+                                    ?>
                                         <tr class="select-executive" data-id="<?php echo $executive['id']; ?>"
                                             data-code="<?php echo htmlspecialchars($executive['code']); ?>"
                                             data-fullname="<?php echo htmlspecialchars($executive['full_name']); ?>"
@@ -246,9 +276,15 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                                             data-whatsapp_number="<?php echo htmlspecialchars($executive['whatsapp_number']); ?>"
                                             data-target-month="<?php echo htmlspecialchars($executive['target_month']); ?>"
                                             data-target="<?php echo htmlspecialchars($executive['target']); ?>"
+                                            data-commission="<?php echo htmlspecialchars($executive['commission']); ?>"
                                             data-joined-date="<?php echo htmlspecialchars($executive['joined_date']); ?>"
                                             data-remark="<?php echo htmlspecialchars($executive['remark']); ?>"
-                                            data-active="<?php echo $executive['is_active']; ?>">
+                                            data-active="<?php echo $executive['is_active']; ?>"
+                                            data-user-name="<?php 
+                                            $USER = new User(null);
+                                            $user = $USER->getUserBySalesExecutiveId($executive['id']);
+                                            
+                                            echo $user['username']; ?>">
 
                                             <td><?php echo $key; ?></td>
                                             <td><?php echo htmlspecialchars($executive['code']); ?></td>

@@ -234,8 +234,11 @@ jQuery(document).ready(function () {
         $('#whatsapp_number').val($(this).data('whatsapp_number'));
         $('#target_month').val($(this).data('target-month'));
         $('#target').val($(this).data('target'));
+        $('#commission').val($(this).data('commission'));
         $('#joined_date').val($(this).data('joined-date'));
         $('#remark').val($(this).data('remark'));
+        $('#user_name').val($(this).data('user-name'));
+        $('#password').val($(this).data('password'));
 
         if ($(this).data('active') == 1) {
             $('#is_active').prop('checked', true);
