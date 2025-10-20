@@ -10,6 +10,7 @@ class MarketingExecutive
     public $whatsapp_number;
     public $target_month;
     public $target;
+    public $commission;
     public $joined_date;
     public $is_active;
     public $remark;
@@ -34,6 +35,7 @@ class MarketingExecutive
                 $this->whatsapp_number = $result['whatsapp_number'];
                 $this->target_month = $result['target_month'];
                 $this->target = $result['target'];
+                $this->commission = $result['commission'];
                 $this->joined_date = $result['joined_date'];
                 $this->is_active = $result['is_active'];
                 $this->remark = $result['remark'];
@@ -48,11 +50,11 @@ class MarketingExecutive
     public function create()
     {
         $query = "INSERT INTO `marketing_executive` 
-            (`code`, `full_name`, `nic`, `mobile_number`, `whatsapp_number`, `target_month`, `target`, `joined_date`, `is_active`, `remark`, `created_at`) 
+            (`code`, `full_name`, `nic`, `mobile_number`, `whatsapp_number`, `target_month`, `target`, `commission`, `joined_date`, `is_active`, `remark`, `created_at`) 
             VALUES 
             (
                 '$this->code', '$this->full_name', '$this->nic', '$this->mobile_number', '$this->whatsapp_number',
-                '$this->target_month', '$this->target', '$this->joined_date', '$this->is_active', '$this->remark', NOW()
+                '$this->target_month', '$this->target', '$this->commission', '$this->joined_date', '$this->is_active', '$this->remark', NOW()
             )";
 
         $db = new Database();
@@ -76,6 +78,7 @@ class MarketingExecutive
             `whatsapp_number` = '$this->whatsapp_number',
             `target_month` = '$this->target_month',
             `target` = '$this->target',
+            `commission` = '$this->commission',
             `joined_date` = '$this->joined_date',
             `is_active` = '$this->is_active',
             `remark` = '$this->remark'
