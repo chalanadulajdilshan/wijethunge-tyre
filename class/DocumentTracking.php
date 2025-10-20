@@ -19,6 +19,7 @@ class DocumentTracking
     public $vat_percentage;
     public $created_at;
     public $updated_at;
+    public $payment_receipt_supplier_id;
 
     // Constructor to initialize the object using ID
     public function __construct($id = null)
@@ -41,11 +42,11 @@ class DocumentTracking
     {
         $query = "INSERT INTO `document_tracking` (
             `company_code`, `accounting_year_start`, `accounting_year_end`, `invoice_id`, 
-            `quotation_id`, `arn_id`, `vat_percentage`, `created_at`, `updated_at`
+            `quotation_id`, `arn_id`, `vat_percentage`, `created_at`, `updated_at`, `payment_receipt_supplier_id`
         ) VALUES (
             '{$this->company_code}', '{$this->accounting_year_start}', '{$this->accounting_year_end}', 
             '{$this->invoice_id}', '{$this->quotation_id}', '{$this->arn_id}', '{$this->vat_percentage}', 
-            NOW(), NOW()
+            NOW(), NOW(), '{$this->payment_receipt_supplier_id}'
         )";
 
         $db = new Database();
@@ -69,7 +70,8 @@ class DocumentTracking
             `quotation_id` = '{$this->quotation_id}',
             `arn_id` = '{$this->arn_id}',
             `vat_percentage` = '{$this->vat_percentage}',
-            `updated_at` = NOW()
+            `updated_at` = NOW(),
+            `payment_receipt_supplier_id` = '{$this->payment_receipt_supplier_id}'
         WHERE `id` = '{$this->id}'";
 
         $db = new Database();
@@ -140,6 +142,7 @@ class DocumentTracking
             'credit' => 'credit_id',
             'sales_return' => 'sales_return_id',
             'payment_receipt' => 'payment_receipt_id',
+            'payment_receipt_supplier' => 'payment_receipt_supplier_id',
             'arn' => 'arn_id'
         ];
 
