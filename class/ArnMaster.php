@@ -267,4 +267,30 @@ class ArnMaster
 
         return true;
     }
+    public function updateInvoiceOutstanding($invoice_id, $amount)
+    {
+        $query = "UPDATE `arn_master` SET `paid_amount` = `paid_amount` + $amount WHERE `id` = $invoice_id";
+
+        $db = new Database();
+        $result = $db->readQuery($query);
+        return ($result) ? true : false;
+    }
+
+    public function getCreditInvoicesByCustomerAndStatus($status, $customer_id)
+    {
+        $query = "SELECT * FROM `arn_master` 
+                 WHERE `supplier_id` = $customer_id
+                 AND `total_arn_value` > `paid_amount`      
+                 AND `is_cancelled`='0'
+                 ORDER BY `invoice_date` DESC";
+        $db = new Database();
+        $result = $db->readQuery($query);
+        $array_res = array();
+
+        while ($row = mysqli_fetch_array($result)) {
+            $array_res[] = $row;
+        }
+
+        return $array_res;
+    }
 }
