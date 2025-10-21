@@ -233,7 +233,7 @@ $arn_id = $COMPANY_PROFILE_DETAILS->company_code . '/ARN/00/' . ($lastId + 1);
                                             </div>
 
 
-                                            <div class="col-md-2">
+                                            <div class="col-md-2" style="display: none;">
                                                 <label for="Category" class="form-label">Category</label>
                                                 <div class="input-group mb-3">
                                                     <select id="category" name="category" class="form-select">
