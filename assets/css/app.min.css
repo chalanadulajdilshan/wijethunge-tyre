@@ -1544,11 +1544,11 @@ body[data-layout="horizontal"][data-topbar="colored"] .app-search span {
 }
 
 body[data-layout="horizontal"][data-topbar="colored"] .header-item {
-    color: #e9ecef;
+    color: #000;
 }
 
 body[data-layout="horizontal"][data-topbar="colored"] .header-item:hover {
-    color: #e9ecef;
+    color: #000;
 }
 
 body[data-layout="horizontal"][data-topbar="colored"] .navbar-header .dropdown .show.header-item {
@@ -1560,7 +1560,7 @@ body[data-layout="horizontal"][data-topbar="colored"] .navbar-header .waves-effe
 }
 
 body[data-layout="horizontal"][data-topbar="colored"] .noti-icon i {
-    color: #e9ecef;
+    color: #000;
 }
 
 body[data-layout-size="boxed"] {

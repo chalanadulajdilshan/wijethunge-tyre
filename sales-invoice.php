@@ -48,12 +48,6 @@ include './auth.php';
                                 </a>
                             <?php endif; ?>
 
-                            <?php if ($PERMISSIONS['edit_page']): ?>
-                                <a href="#" class="btn btn-warning" id="update" style="display: none;">
-                                    <i class="uil uil-edit me-1"></i> Update
-                                </a>
-                            <?php endif; ?>
-
                             <a href="#" class="btn btn-info" id="print" style="display: none;">
                                 <i class="uil uil-print me-1"></i> Print
                             </a>
@@ -125,6 +119,20 @@ include './auth.php';
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">Sales Rep Orders</label>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="sales_rep_orders" name="sales_rep_orders">
+                                                    <label class="form-check-label" for="sales_rep_orders">Enable</label>
+                                                </div>
+
+                                                <!-- Load Sales Order button -->
+                                                <button type="button" class="btn btn-sm btn-primary mt-1" id="load_sales_order" data-bs-toggle="modal" data-bs-target="#salesOrdersModal" style="display: none;">
+                                                    <i class="uil uil-search me-1"></i> Load Sales Order
+                                                </button>
+                                            </div>
+
                                             <div class="col-md-2">
                                                 <label for="InvoiceCode" class="form-label">Invoice No</label>
                                                 <div class="input-group mb-3">
@@ -257,7 +265,7 @@ include './auth.php';
                                                     </select>
                                                 </div>
                                             </div>
-                                                            
+
 
                                             <div class="col-md-1" style="display: none;">
                                                 <label for="vat_type" class="form-label">Vat Type</label>
@@ -312,7 +320,36 @@ include './auth.php';
                                                 </div>
                                             </div>
 
+
+
                                             <hr class="my-4">
+
+                                            <!-- Sales Rep Orders Table -->
+                                            <div class="table-responsive mt-4" id="salesRepOrdersTable" style="display: none;">
+                                                <h5 class="text-primary">Sales Rep Orders</h5>
+                                                <table class="table table-bordered table-striped">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Order #</th>
+                                                            <th>Item Code</th>
+                                                            <th>Item Name</th>
+                                                            <th>Order Qty</th>
+                                                            <th>Stock Qty</th>
+                                                            <th>Price</th>
+                                                            <th>Discount (%)</th>
+                                                            <th>Selling Price</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="salesRepOrdersBody">
+                                                        <tr id="noSalesRepOrdersRow">
+                                                            <td colspan="8" class="text-center text-muted">
+                                                                No sales rep orders loaded</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
                                             <div class="row align-items-end" id="addItemTable">
                                                 <div class="col-md-2">
                                                     <label for="itemCode" class="form-label">Item
@@ -823,7 +860,60 @@ include './auth.php';
             </div><!-- /.modal-content -->
         </div><!-- /.modal-dialog -->
     </div>
-    <!-- model close here -->
+    <!-- model close here quotation-->
+
+
+
+
+
+    <!-- model open here sales orders -->
+    <div class="modal fade bs-example-modal-xl" id="salesOrdersModal" tabindex="-1" role="dialog" aria-labelledby="salesOrdersModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="salesOrdersModalLabel">Manage Sales Orders</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="uil uil-search"></i></span>
+                                <input type="text" id="salesOrdersSearch" class="form-control" placeholder="Search by Customer Name, Marketing Executive, or Sales Order No...">
+                            </div>
+                        </div>
+                        <div class="col-12">
+
+                            <table id="salesOrdersTable" class="table table-bordered dt-responsive nowrap"
+                                style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>#ID</th>
+                                        <th>Sales Order No</th>
+                                        <th>Date</th>
+                                        <th>Customer Name</th>
+                                        <th>Marketing Executive</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="salesOrdersTableBody">
+                                    <tr id="noSalesOrdersRow">
+                                        <td colspan="7" class="text-center text-muted py-3">Loading sales orders...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div> <!-- end col -->
+                    </div> <!-- end row -->
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div>
+    <!-- model close here sales orders-->
+
 
 
     <!-- DAG Modal -->

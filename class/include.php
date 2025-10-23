@@ -79,6 +79,8 @@ include_once(dirname(__FILE__) . '/ServiceIncome.php');
 include_once(dirname(__FILE__) . '/sales_executive_outstanding.php');
 include_once(dirname(__FILE__) . '/PaymentReceiptSupplier.php');
 include_once(dirname(__FILE__) . '/PaymentReceiptMethodSupplier.php');
+include_once(dirname(__FILE__) . '/SalesOrder.php');
+include_once(dirname(__FILE__) . '/SalesOrderItem.php');
 
 session_start();
 function dd($data)

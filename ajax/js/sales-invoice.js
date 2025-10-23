@@ -54,6 +54,39 @@ jQuery(document).ready(function () {
         calculatePayment("price");
       }
     }
+
+    // Update sales rep orders table if it's visible
+    if ($("#salesRepOrdersTable").is(":visible") && currentSalesOrdersData.length > 0) {
+      populateSalesRepOrdersTable(currentSalesOrdersData);
+    }
+  });
+
+  // SALES REP ORDERS CHECKBOX CHANGE
+  $("#sales_rep_orders").on("change", function () {
+    const isChecked = $(this).is(":checked");
+    const departmentId = $("#department_id").val();
+
+    if (isChecked) {
+      if (!departmentId) {
+        swal("Warning", "Please select a department first.", "warning");
+        $(this).prop("checked", false);
+        return;
+      }
+      // Hide item tables when sales rep orders is enabled
+      $("#addItemTable").hide();
+      $("#serviceItemTable").hide();
+      $("#salesRepOrdersTable").show();
+      $("#load_sales_order").show(); // Show the load sales order button
+      fetchSalesOrders(departmentId);
+    } else {
+      // Show default item tables when sales rep orders is disabled
+      $("#addItemTable").show();
+      $("#serviceItemTable").hide(); // Keep service table hidden by default
+      $("#salesRepOrdersTable").hide();
+      $("#load_sales_order").hide(); // Hide the load sales order button
+      currentSalesOrdersData = []; // Clear stored data
+      clearSalesRepOrdersTable();
+    }
   });
 
   // Initial button state
@@ -1037,6 +1070,9 @@ jQuery(document).ready(function () {
   function processInvoiceCreation() {
     const items = [];
     const dagItems = [];
+    const customerPrices = [];
+    const dealerPrices = [];
+    const salesOrderIds = [];
 
     //  item invoice to send this php file
     $("#invoiceItemsBody tr").each(function (index) {
@@ -1054,6 +1090,12 @@ jQuery(document).ready(function () {
       const vehicle_no = $(this).find('input[name="vehicle_no[]"]').val();
       const current_km = $(this).find('input[name="current_km[]"]').val();
       const next_service_days = $(this).find('input[name="next_service_days[]"]').val();
+      const sales_order_id = $(this).find('input[name="sales_order_ids[]"]').val();
+
+      // Collect arrays for PHP processing
+      customerPrices.push(customer_price);
+      dealerPrices.push(dealer_price);
+      salesOrderIds.push(sales_order_id || '');
 
       items.push({
         item_id,
@@ -1071,58 +1113,59 @@ jQuery(document).ready(function () {
         vehicle_no,
         current_km,
         next_service_days,
+        sales_order_id,
       });
     });
 
-   // Validate items
-if (items.length === 0 && dagItems.length === 0) {
-  return swal({
-    title: "Error!",
-    text: "Please add at least one item.",
-    type: "error",
-    timer: 3000,
-    showConfirmButton: false,
-  });
-}
+    // Validate items
+    if (items.length === 0 && dagItems.length === 0) {
+      return swal({
+        title: "Error!",
+        text: "Please add at least one item.",
+        type: "error",
+        timer: 3000,
+        showConfirmButton: false,
+      });
+    }
 
-// Validate customer name
-const customerName = $("#customer_name").val().trim();
-if (!customerName) {
-  $("#customer_name").focus();
-  return swal({
-    title: "Error!",
-    text: "Please select a customer before creating an invoice.",
-    type: "error",
-    timer: 3000,
-    showConfirmButton: false,
-  });
-}
+    // Validate customer name
+    const customerName = $("#customer_name").val().trim();
+    if (!customerName) {
+      $("#customer_name").focus();
+      return swal({
+        title: "Error!",
+        text: "Please select a customer before creating an invoice.",
+        type: "error",
+        timer: 3000,
+        showConfirmButton: false,
+      });
+    }
 
-// Validate cash sales with credit
-if ($("#customer_code").val() === "CM/01" && $("#payment_type").val() === "2") {
-  $("#customer_code").focus();
-  return swal({
-    title: "Error!",
-    text: "Cash sales customer is not allowed to create a credit invoice.",
-    type: "error",
-    timer: 3000,
-    showConfirmButton: false,
-  });
-}
+    // Validate cash sales with credit
+    if ($("#customer_code").val() === "CM/01" && $("#payment_type").val() === "2") {
+      $("#customer_code").focus();
+      return swal({
+        title: "Error!",
+        text: "Cash sales customer is not allowed to create a credit invoice.",
+        type: "error",
+        timer: 3000,
+        showConfirmButton: false,
+      });
+    }
 
-// Validate credit period 
-if ($("input[name='payment_type']:checked").val() === "2") {
-  const creditPeriod = $("#credit_period").val()?.trim();
-  if (!creditPeriod) {
-    return swal({
-      title: "Error!",
-      text: "Please select credit period.",
-      type: "error",
-      timer: 3000,
-      showConfirmButton: false,
-    });
-  }
-}
+    // Validate credit period 
+    if ($("input[name='payment_type']:checked").val() === "2") {
+      const creditPeriod = $("#credit_period").val()?.trim();
+      if (!creditPeriod) {
+        return swal({
+          title: "Error!",
+          text: "Please select credit period.",
+          type: "error",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+      }
+    }
 
 
         
@@ -1228,6 +1271,12 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     formData.append("invoice_no", $("#invoice_no").val());
     formData.append("invoice_date", $("#invoice_date").val());
     formData.append("items", JSON.stringify(items));
+    
+    // Add sales order IDs as separate arrays for PHP processing
+    salesOrderIds.forEach((id, index) => {
+      formData.append(`sales_order_ids[${index}]`, id);
+    });
+    
     formData.append(
       "sales_type",
       $('input[name="payment_type"]:checked').val()
@@ -1315,6 +1364,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       const vehicle_no = $(this).find('input[name="vehicle_no[]"]').val();
       const current_km = $(this).find('input[name="current_km[]"]').val();
       const next_service_days = $(this).find('input[name="next_service_days[]"]').val();
+      const sales_order_id = $(this).find('input[name="sales_order_ids[]"]').val();
 
       items.push({
         item_id,
@@ -1332,6 +1382,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         vehicle_no,
         current_km,
         next_service_days,
+        sales_order_id,
       });
     });
 
@@ -2416,6 +2467,470 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     // Update totals
     $("#subTotal").val(subTotal.toFixed(2));
     $("#finalTotal").val(subTotal.toFixed(2));
+  }
+
+  // SALES ORDERS MODAL
+  $("#salesOrdersModal").on("shown.bs.modal", function () {
+    // Clear search input when modal opens
+    $('#salesOrdersSearch').val('');
+    loadAllSalesOrders();
+  });
+
+  // Function to load all sales orders for the modal
+  function loadAllSalesOrders() {
+    $("#noSalesOrdersRow").html('<td colspan="7" class="text-center text-secondary py-3"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading sales orders, please wait...</td>');
+    
+    // Collect item codes from current invoice items
+    let currentItemCodes = [];
+    $("#invoiceItemsBody tr").each(function () {
+      const itemCode = $(this).find('input[name="item_codes[]"]').val();
+      if (itemCode && !currentItemCodes.includes(itemCode)) {
+        currentItemCodes.push(itemCode);
+      }
+    });
+    
+    $.ajax({
+      url: "ajax/php/sales-invoice.php",
+      method: "POST",
+      data: {
+        action: "fetch_sales_orders",
+        invoice_type: $("#invoice_type").val(),
+        current_item_codes: JSON.stringify(currentItemCodes) // Send current item codes for filtering
+      },
+      dataType: "json",
+      success: function (response) {
+        if (response.status === "success") {
+          populateSalesOrdersModal(response.data);
+        } else {
+          $("#salesOrdersTableBody").html('<tr><td colspan="7" class="text-center text-danger py-3">Failed to load sales orders</td></tr>');
+        }
+      },
+      error: function () {
+        $("#salesOrdersTableBody").html('<tr><td colspan="7" class="text-center text-danger py-3">Error loading sales orders</td></tr>');
+      }
+    });
+  }
+
+
+  
+  // Store original orders data for filtering
+  let originalOrdersData = [];
+
+  // Populate the sales orders modal table
+  function populateSalesOrdersModal(orders) {
+    originalOrdersData = orders; // Store original data for filtering
+    
+    if (orders.length === 0) {
+      $("#salesOrdersTableBody").html('<tr><td colspan="7" class="text-center text-muted py-3">No sales orders found</td></tr>');
+      return;
+    }
+
+    renderOrdersTable(orders);
+    
+    // Initialize DataTable for pagination only
+    if ($.fn.DataTable.isDataTable('#salesOrdersTable')) {
+      $('#salesOrdersTable').DataTable().destroy();
+    }
+    
+    var salesOrdersTable = $('#salesOrdersTable').DataTable({
+      pageLength: 10,
+      searching: false, // Disable default search
+      lengthChange: false,
+      info: true,
+      paging: true,
+      ordering: false, // Disable ordering to prevent conflicts
+      columnDefs: [
+        { orderable: false, targets: '_all' } // Disable ordering on all columns
+      ]
+    });
+
+    // Setup real-time search
+    setupRealTimeSearch();
+  }
+
+  // Render orders table rows
+  function renderOrdersTable(orders) {
+    let tbody = "";
+    orders.forEach(function(order, index) {
+      const statusClass = order.status === 0 ? 'badge bg-warning' : 
+                         order.status === 1 ? 'badge bg-success' : 
+                         order.status === 2 ? 'badge bg-danger' : 'badge bg-secondary';
+
+      tbody += `<tr class="sales-order-select" 
+                      data-order-id="${order.order_db_id}"
+                      data-order-data='${JSON.stringify(order)}'
+                      data-search-text="${order.order_id.toLowerCase()} ${order.customer_name.toLowerCase()} ${(order.marketing_executive_name || '').toLowerCase()}">
+                  <td>${index + 1}</td>
+                  <td>${order.order_id}</td>
+                  <td>${order.order_date}</td>
+                  <td>${order.customer_name}</td>
+                  <td>${order.marketing_executive_name || 'N/A'}</td>
+                  <td><span class="${statusClass}">${order.status_text}</span></td>
+                  <td><button type="button" class="btn btn-primary btn-sm select-order-btn">Select</button></td>
+                </tr>`;
+    });
+    
+    $("#salesOrdersTableBody").html(tbody);
+  }
+
+  // Setup real-time search functionality
+  function setupRealTimeSearch() {
+    $('#salesOrdersSearch').off('keyup input').on('keyup input', function() {
+      const searchTerm = $(this).val().toLowerCase().trim();
+      
+      if (searchTerm === '') {
+        // Show all rows if search is empty
+        $("#salesOrdersTable tbody tr").show();
+      } else {
+        // Filter rows based on search term
+        $("#salesOrdersTable tbody tr").each(function() {
+          const searchText = $(this).data('search-text') || '';
+          if (searchText.includes(searchTerm)) {
+            $(this).show();
+          } else {
+            $(this).hide();
+          }
+        });
+      }
+      
+      // Update DataTable display after filtering
+      if ($.fn.DataTable.isDataTable('#salesOrdersTable')) {
+        $('#salesOrdersTable').DataTable().draw(false);
+      }
+    });
+  }
+
+  // Handle sales order selection
+  $(document).on('click', '.select-order-btn', function () {
+    const row = $(this).closest('tr');
+    const orderDataJson = row.data('order-data');
+    
+    try {
+      const orderData = typeof orderDataJson === 'string' ? JSON.parse(orderDataJson) : orderDataJson;
+      
+      // Confirm selection with SweetAlert
+      swal({
+        title: "Confirm Selection",
+        text: `Are you sure you want to load sales order "${orderData.order_id}"?\n\nThis will populate customer details and load all items from this order into the Sales Rep Orders table for manual selection.`,
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Load Order",
+        cancelButtonText: "Cancel"
+      }, function(isConfirm) {
+        if (isConfirm) {
+          loadSalesOrderToInvoice(orderData);
+          $("#salesOrdersModal").modal("hide");
+        }
+      });
+    } catch (e) {
+      console.error('Error parsing order data:', e);
+      swal("Error", "Failed to load sales order data", "error");
+    }
+  });
+
+  // Function to load sales order data to invoice
+  function loadSalesOrderToInvoice(orderData) {
+    console.log('Loading sales order to invoice:', orderData);
+    
+    // Ensure Sales Rep Orders functionality is enabled
+    if (!$("#sales_rep_orders").is(":checked")) {
+      $("#sales_rep_orders").prop("checked", true).trigger("change");
+    }
+    
+    // Populate customer fields
+    $("#customer_id").val(orderData.customer_id || '');
+    $("#customer_code").val(orderData.customer_code || '');
+    $("#customer_name").val(orderData.customer_name || '');
+    $("#customer_mobile").val(orderData.customer_mobile || '');
+    $("#customer_address").val(orderData.customer_address || '');
+    
+    // Populate marketing executive
+    if (orderData.marketing_executive_id) {
+      $("#marketing_executive").val(orderData.marketing_executive_id).trigger('change');
+    }
+    
+    // Load items into Sales Rep Orders table instead of directly to invoice
+    if (orderData.items && orderData.items.length > 0) {
+      // Populate the sales rep orders table with this single order
+      populateSalesRepOrdersTable([orderData]);
+      
+      // Show success message
+      swal({
+        title: "Success!",
+        text: `Sales order "${orderData.order_id}" has been loaded successfully. Customer details have been populated and all items are now available in the Sales Rep Orders table for manual selection.`,
+        type: "success",
+        timer: 4000,
+        showConfirmButton: false
+      });
+    } else {
+      // No items, just show customer data loaded
+      $("#customer_code").trigger('change');
+      $("#customer_name").trigger('change');
+      
+      swal({
+        title: "Success!",
+        text: `Sales order "${orderData.order_id}" customer details have been loaded. No items found in this order.`,
+        type: "success",
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+  }
+
+
+  // Fetch sales orders data
+  function fetchSalesOrders(departmentId) {
+    const invoiceType = $("#invoice_type").val();
+    
+    // Collect item codes from current invoice items for filtering
+    let currentItemCodes = [];
+    $("#invoiceItemsBody tr").each(function () {
+      const itemCode = $(this).find('input[name="item_codes[]"]').val();
+      if (itemCode && !currentItemCodes.includes(itemCode)) {
+        currentItemCodes.push(itemCode);
+      }
+    });
+    
+    $.ajax({
+      url: "ajax/php/sales-invoice.php",
+      method: "POST",
+      data: {
+        action: "fetch_sales_orders",
+        department_id: departmentId,
+        invoice_type: invoiceType,
+        current_item_codes: JSON.stringify(currentItemCodes) // Send current item codes for filtering
+      },
+      dataType: "json",
+      success: function (response) {
+        if (response.status === "success") {
+          // Store data globally for auto-fill functionality
+          currentSalesOrdersData = response.data;
+          console.log('Sales orders data stored globally:', currentSalesOrdersData);
+          
+          populateSalesRepOrdersTable(response.data);
+        } else {
+          swal("Error", response.message || "Failed to fetch sales orders", "error");
+          $("#sales_rep_orders").prop("checked", false);
+          $("#salesRepOrdersTable").hide();
+        }
+      },
+      error: function () {
+        swal("Error", "Failed to fetch sales orders", "error");
+        $("#sales_rep_orders").prop("checked", false);
+        $("#salesRepOrdersTable").hide();
+      }
+    });
+  }
+
+  // Clear sales rep orders table
+  function clearSalesRepOrdersTable() {
+    $("#noSalesRepOrdersRow").show();
+    $("#salesRepOrdersBody tr.sales-order-row").remove();
+  }
+
+  // Populate sales rep orders table
+  function populateSalesRepOrdersTable(orders) {
+    clearSalesRepOrdersTable();
+
+    if (orders.length === 0) {
+      $("#noSalesRepOrdersRow").show();
+      return;
+    }
+
+    // Get current invoice type to determine which price to show
+    const invoiceType = $("#invoice_type").val();
+    const priceType = invoiceType === "customer" ? "customer_price" : "dealer_price";
+    const priceLabel = invoiceType === "customer" ? "Customer Price" : "Dealer Price";
+
+    // Update table header dynamically
+    $("#salesRepOrdersTable thead th:nth-child(6)").text(priceLabel);
+
+    let tbody = "";
+    orders.forEach(function(order) {
+      order.items.forEach(function(item) {
+        // Use the appropriate price based on invoice type, fallback to dealer_price if customer_price is 0 or null
+        const selectedPrice = invoiceType === "customer" 
+          ? (parseFloat(item.customer_price) || parseFloat(item.dealer_price)) 
+          : parseFloat(item.dealer_price);
+        const sellingPrice = selectedPrice; // Initial selling price is the selected price
+
+        const orderDataObject = {
+          customer_id: order.customer_id,
+          customer_code: order.customer_code,
+          customer_name: order.customer_name,
+          customer_mobile: order.customer_mobile,
+          customer_address: order.customer_address,
+          marketing_executive_id: order.marketing_executive_id,
+          marketing_executive_name: order.marketing_executive_name
+        };
+        
+        const orderDataJson = JSON.stringify(orderDataObject);
+
+        tbody += `<tr class="sales-order-row" 
+                      data-item-id="${item.item_id}" 
+                      data-order-db-id="${order.order_db_id}"
+                      data-order-data='${orderDataJson}'
+                      data-customer-price="${item.customer_price}"
+                      data-dealer-price="${item.dealer_price}">
+                    <td>${order.order_id}</td>
+                    <td>${item.item_code}</td>
+                    <td>${item.item_name}</td>
+                    <td class="order-qty">${item.order_qty}</td>
+                    <td class="stock-qty">${item.stock_qty}</td>
+                    <td class="selected-price">${selectedPrice.toFixed(2)}</td>
+                    <td><input type="number" class="form-control discount-input" value="0" min="0" max="100" style="width: 70px;"></td>
+                    <td class="selling-price">${sellingPrice.toFixed(2)}</td>
+                    <td><button type="button" class="btn btn-success btn-sm add-to-invoice">Add to Invoice</button></td>
+                  </tr>`;
+      });
+    });
+    
+    $("#noSalesRepOrdersRow").hide();
+    $("#salesRepOrdersBody").append(tbody);
+  }
+
+  // Handle discount changes in sales rep orders table
+  $(document).on("input", ".discount-input", function() {
+    const row = $(this).closest("tr");
+    const selectedPrice = parseFloat(row.find(".selected-price").text()) || 0;
+    const discountPercent = parseFloat($(this).val()) || 0;
+
+    const discountAmount = (selectedPrice * discountPercent) / 100;
+    const sellingPrice = selectedPrice - discountAmount;
+
+    row.find(".selling-price").text(sellingPrice.toFixed(2));
+  });
+
+  // Add to invoice functionality
+  $(document).on('click', '.add-to-invoice', function () {
+    const row = $(this).closest('tr');
+    const orderId = row.find('td').eq(0).text();
+    const orderDbId = row.data('order-db-id');
+    const itemId = row.data('item-id');
+    const itemCode = row.find('td').eq(1).text();
+    const itemName = row.find('td').eq(2).text();
+    const orderQty = row.find('.order-qty').text();
+    const selectedPrice = row.find('.selected-price').text();
+    const discount = row.find('.discount-input').val();
+    const sellingPrice = row.find('.selling-price').text();
+
+    // Get order data from the row's data attributes
+    const orderDataJson = row.data('order-data');
+    let orderData = null;
+    
+    try {
+      if (typeof orderDataJson === 'string') {
+        orderData = JSON.parse(orderDataJson);
+      } else {
+        orderData = orderDataJson;
+      }
+    } catch (e) {
+      console.error('Error parsing order data:', e);
+    }
+    
+    // Populate customer fields if not already filled
+    if (orderData && !$("#customer_code").val()) {
+      $("#customer_id").val(orderData.customer_id || '');
+      $("#customer_code").val(orderData.customer_code || '');
+      $("#customer_name").val(orderData.customer_name || '');
+      $("#customer_mobile").val(orderData.customer_mobile || '');
+      $("#customer_address").val(orderData.customer_address || '');
+      
+      // Trigger change events
+      $("#customer_code").trigger('change');
+      $("#customer_name").trigger('change');
+    }
+    
+    // Populate marketing executive field if not already filled
+    if (orderData && orderData.marketing_executive_id && !$("#marketing_executive").val()) {
+      $("#marketing_executive").val(orderData.marketing_executive_id);
+      $("#marketing_executive").trigger('change');
+    }
+
+    // Add to main invoice table
+    addSalesOrderItemToInvoice(orderId, itemId, itemCode, itemName, orderQty, selectedPrice, sellingPrice, discount, orderDbId);
+
+    // Update sales order status to 1 (invoiced)
+    updateSalesOrderStatus(orderDbId);
+
+    // Remove from sales rep orders table
+    row.remove();
+
+    // Show "no items" row if no items left
+    if ($("#salesRepOrdersBody tr:not(#noSalesRepOrdersRow)").length === 0) {
+      $("#noSalesRepOrdersRow").show();
+    }
+  });
+
+  // Function to update sales order status to 1 (invoiced)
+  function updateSalesOrderStatus(orderDbId) {
+    $.ajax({
+      url: "ajax/php/sales-invoice.php",
+      method: "POST",
+      data: {
+        action: "update_sales_order_status",
+        order_id: orderDbId,
+        status: 1
+      },
+      dataType: "json",
+      success: function(response) {
+        if (response.status !== "success") {
+          console.error("Failed to update sales order status:", response.message);
+        }
+      },
+      error: function() {
+        console.error("Error updating sales order status");
+      }
+    });
+  }
+
+  // Function to add sales order item to main invoice table
+  function addSalesOrderItemToInvoice(orderId, itemId, itemCode, itemName, qty, selectedPrice, sellingPrice, discount, orderDbId) {
+    // Hide no items row
+    $("#noInvoiceItemRow").hide();
+
+    // Calculate total based on selling price * quantity
+    const total = parseFloat(sellingPrice) * parseFloat(qty);
+
+    // Get customer and dealer prices from the row data attributes
+    const row = $(`.sales-order-row[data-item-id="${itemId}"][data-order-db-id="${orderDbId}"]`);
+    const customerPrice = parseFloat(row.data("customer-price")) || parseFloat(row.data("dealer-price"));
+    const dealerPrice = parseFloat(row.data("dealer-price"));
+
+    // For sales rep orders, we need to find an available ARN or use the item code
+    // Since sales rep orders might not have specific ARNs, we'll use the item code
+    const arnNo = itemCode; // Use item code as ARN identifier for sales orders
+    const cost = 0; // No specific cost for sales orders
+
+    // Create new row matching the exact structure of existing invoice items
+    const newRow = `<tr>
+                      <td>${itemCode}
+                          <input type="hidden" name="item_id[]" value="${itemId}">
+                          <input type="hidden" name="item_codes[]" value="${itemCode}">
+                          <input type="hidden" name="customer_prices[]" value="${customerPrice}">
+                          <input type="hidden" name="dealer_prices[]" value="${dealerPrice}">
+                          <input type="hidden" name="arn_ids[]" value="${arnNo}">
+                          <input type="hidden" name="arn_costs[]" value="${cost}">
+                          <input type="hidden" name="service_qty[]" value="0">
+                          <input type="hidden" name="vehicle_no[]" value="">
+                          <input type="hidden" name="current_km[]" value="">
+                          <input type="hidden" name="next_service_days[]" value="">
+                          <input type="hidden" name="sales_order_ids[]" value="${orderDbId}">
+                      </td>
+                      <td>${itemName}</td>
+                      <td class="item-price">${parseFloat(sellingPrice).toFixed(2)}</td>
+                      <td class="item-qty">${qty}</td>
+                      <td class="item-discount">${discount}</td>
+                      <td>${total.toFixed(2)}</td>
+                      <td>
+                          <button type="button" class="btn btn-sm btn-danger btn-remove-item" data-code="${itemCode}" data-qty="${qty}" data-arn-id="${arnNo}">Remove</button>
+                      </td>
+                    </tr>`;
+
+    $("#invoiceItemsBody").append(newRow);
+    updateFinalTotal();
   }
 
 });

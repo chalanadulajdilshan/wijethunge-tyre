@@ -16,6 +16,169 @@ if (isset($_POST['action']) && $_POST['action'] == 'check_invoice_id') {
     exit();
 }
 
+// Handle sales rep orders fetch
+if (isset($_POST['action']) && $_POST['action'] == 'fetch_sales_orders') {
+    $department_id = isset($_POST['department_id']) ? $_POST['department_id'] : null;
+    $invoice_type = isset($_POST['invoice_type']) ? $_POST['invoice_type'] : 'customer';
+    $current_item_codes = isset($_POST['current_item_codes']) ? json_decode($_POST['current_item_codes'], true) : [];
+
+    $SALES_ORDER = new SalesOrder(NULL);
+    $sales_orders = $SALES_ORDER->all();
+
+    // Debug: Check what we got from the database
+    error_log("Total sales orders found: " . count($sales_orders));
+    if (!empty($sales_orders)) {
+        error_log("First sales order structure: " . json_encode($sales_orders[0]));
+    }
+
+    $result = [];
+
+    foreach ($sales_orders as $order) {
+        // Only filter by department if department_id is provided
+        if ($department_id && $order['department_id'] != $department_id) {
+            continue;
+        }
+        $SALES_ORDER_ITEM = new SalesOrderItem(NULL);
+        $order_items = $SALES_ORDER_ITEM->getByOrderId($order['id']);
+
+        // If current_item_codes are provided, only include orders that have matching items
+        if (!empty($current_item_codes)) {
+            $hasMatchingItems = false;
+            foreach ($order_items as $item) {
+                $ITEM_MASTER = new ItemMaster($item['item_id']);
+                if (in_array($ITEM_MASTER->code, $current_item_codes)) {
+                    $hasMatchingItems = true;
+                    break;
+                }
+            }
+            // Skip this order if it doesn't have matching items
+            if (!$hasMatchingItems) {
+                continue;
+            }
+        }
+
+        $items = [];
+        foreach ($order_items as $item) {
+            $ITEM_MASTER = new ItemMaster($item['item_id']);
+            $STOCK_MASTER = new StockMaster(NULL);
+            $stock_qty = $STOCK_MASTER->getTotalAvailableQuantityByDepartment($item['item_id'], $department_id ?: $order['department_id']);
+
+            $price = $invoice_type === 'customer' ? $ITEM_MASTER->customer_price : $ITEM_MASTER->dealer_price;
+
+            $items[] = [
+                'item_id' => $item['item_id'],
+                'item_code' => $ITEM_MASTER->code,
+                'item_name' => $ITEM_MASTER->name,
+                'order_qty' => $item['qty'],
+                'stock_qty' => $stock_qty,
+                'customer_price' => $ITEM_MASTER->customer_price,
+                'dealer_price' => $ITEM_MASTER->dealer_price
+            ];
+        }
+
+        // Get marketing executive info - handle both old and new column names
+        $marketing_executive_id = null;
+        $marketing_executive_name = '';
+        
+        // Check if we have sales_executive_id (new) or rep_id (old)
+        $sales_exec_id = null;
+        if (isset($order['sales_executive_id']) && $order['sales_executive_id']) {
+            $sales_exec_id = $order['sales_executive_id'];
+            error_log("Using sales_executive_id: " . $sales_exec_id);
+        } elseif (isset($order['rep_id']) && $order['rep_id']) {
+            // If still using old column, get marketing executive from user
+            $USER = new User($order['rep_id']);
+            if ($USER->sales_executive_id) {
+                $sales_exec_id = $USER->sales_executive_id;
+                error_log("Using rep_id -> sales_executive_id: " . $sales_exec_id);
+            }
+        }
+        
+        if ($sales_exec_id) {
+            $marketing_executive_id = $sales_exec_id;
+            $MARKETING_EXECUTIVE = new MarketingExecutive($sales_exec_id);
+            $marketing_executive_name = $MARKETING_EXECUTIVE->full_name ?? '';
+            error_log("Marketing Executive found: ID={$marketing_executive_id}, Name={$marketing_executive_name}");
+        } else {
+            error_log("No marketing executive found for order ID: " . $order['id']);
+        }
+
+        // Get customer information
+        $customer_name = '';
+        $customer_mobile = '';
+        $customer_address = '';
+        $customer_code = '';
+        if ($order['customer_id']) {
+            $CUSTOMER = new CustomerMaster($order['customer_id']);
+            $customer_name = $CUSTOMER->name ?? '';
+            $customer_mobile = $CUSTOMER->mobile_number ?? '';
+            $customer_address = $CUSTOMER->address ?? '';
+            $customer_code = $CUSTOMER->code ?? '';
+            
+            error_log("Customer found: ID={$order['customer_id']}, Code={$customer_code}, Name={$customer_name}, Mobile={$customer_mobile}");
+        } else {
+            error_log("No customer ID for order: " . $order['id']);
+        }
+
+        // Get status text
+        $status_text = '';
+        switch ($order['status']) {
+            case 0:
+                $status_text = 'Pending';
+                break;
+            case 1:
+                $status_text = 'Invoiced';
+                break;
+            case 2:
+                $status_text = 'Cancelled';
+                break;
+            default:
+                $status_text = 'Unknown';
+        }
+
+        $result[] = [
+            'order_id' => $order['sales_order_id'],
+            'order_db_id' => $order['id'], // Add database ID for status updates
+            'customer_id' => $order['customer_id'],
+            'customer_code' => $customer_code,
+            'customer_name' => $customer_name,
+            'customer_mobile' => $customer_mobile,
+            'customer_address' => $customer_address,
+            'marketing_executive_id' => $marketing_executive_id,
+            'marketing_executive_name' => $marketing_executive_name,
+            'order_date' => $order['order_date'],
+            'status' => $order['status'],
+            'status_text' => $status_text,
+            'items' => $items
+        ];
+    }
+
+    echo json_encode(['status' => 'success', 'data' => $result]);
+    
+    // Debug: Log the final result structure for the first order (if any)
+    if (!empty($result)) {
+        error_log("Sample order data structure: " . json_encode($result[0]));
+    }
+    
+    exit();
+}
+
+// Update sales order status
+if (isset($_POST['action']) && $_POST['action'] == 'update_sales_order_status') {
+    $orderId = $_POST['order_id'];
+    $status = $_POST['status'];
+
+    $SALES_ORDER = new SalesOrder($orderId);
+    $SALES_ORDER->status = $status;
+    $result = $SALES_ORDER->update();
+
+    if ($result) {
+        echo json_encode(['status' => 'success']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update sales order status']);
+    }
+    exit();
+}
 
 // Create a new invoice
 if (isset($_POST['create'])) {
@@ -33,42 +196,52 @@ if (isset($_POST['create'])) {
 
     $customer_prices = isset($_POST['customer_prices']) ? $_POST['customer_prices'] : [];
     $dealer_prices = isset($_POST['dealer_prices']) ? $_POST['dealer_prices'] : [];
+    $sales_order_ids = isset($_POST['sales_order_ids']) ? $_POST['sales_order_ids'] : [];
+    
+    // Debug logging
+    error_log("Sales Order IDs received: " . print_r($sales_order_ids, true));
 
     // Calculate subtotal and discount
     foreach ($items as $key => $item) {
-        $price = floatval($item['price']); // Use list_price for subtotal calculation to match interface
-        $qty = floatval($item['qty']);
+        $price = floatval($item['price'] ?? 0);
+        $qty = floatval($item['qty'] ?? 0);
 
         $customer_price = isset($customer_prices[$key]) ? floatval($customer_prices[$key]) : $price;
         $dealer_price = isset($dealer_prices[$key]) ? floatval($dealer_prices[$key]) : $price;
 
-        if (isset($item['discount'])) {
-            $discount_percentage = (float)$item['discount'];
-        } else {
-            $discount_percentage = 0;
-        } // item-wise discount percentage
-
+        $discount_percentage = floatval($item['discount'] ?? 0);
 
         //GET ARN ID BY ARN NO
         $ARN_MASTER = new ArnMaster(NULL);
-        $arn_id = $ARN_MASTER->getArnIdByArnNo($item['arn_no']);
+        $arn_no = $item['arn_no'] ?? '';
+        $arn_id = $ARN_MASTER->getArnIdByArnNo($arn_no);
 
-        $ITEM_MASTER = new ItemMaster($item['item_id']);
+        $item_id = $item['item_id'] ?? '';
+        $code = $item['code'] ?? '';
 
+        if (!empty($item_id)) {
+            $ITEM_MASTER = new ItemMaster($item_id);
+        }
 
-        if (substr($item['code'], 0, 2) !== 'SI') {
-            $ARN_ITEM = new ArnItem(NULL);
-            $cost = $ARN_ITEM->getArnCostByArnId($arn_id);
-            $final_cost_item = $cost * $item['qty'];
-            $final_cost += $final_cost_item;
+        if (substr($code, 0, 2) !== 'SI') {
+            if (!empty($arn_id)) {
+                $ARN_ITEM = new ArnItem(NULL);
+                $cost = $ARN_ITEM->getArnCostByArnId($arn_id);
+                $final_cost_item = $cost * $qty;
+                $final_cost += $final_cost_item;
+            }
         } else {
-            $SERVICE_ITEM = new ServiceItem($item['item_id']);
-            $final_cost_item = $SERVICE_ITEM->cost * $item['service_qty'];
-            $final_cost += $final_cost_item;
+            if (!empty($item_id)) {
+                $SERVICE_ITEM = new ServiceItem($item_id);
+                $cost = $SERVICE_ITEM->cost;
+                $service_qty = floatval($item['service_qty'] ?? 0);
+                $final_cost_item = $cost * $service_qty;
+                $final_cost += $final_cost_item;
 
-            $available_qty = $SERVICE_ITEM->qty - $item['service_qty'];
-            $SERVICE_ITEM->qty = $available_qty;
-            $SERVICE_ITEM->update();
+                $available_qty = $SERVICE_ITEM->qty - $service_qty;
+                $SERVICE_ITEM->qty = $available_qty;
+                $SERVICE_ITEM->update();
+            }
         }
 
         $itemTotal = $price * $qty;
@@ -158,116 +331,150 @@ if (isset($_POST['create'])) {
 
             $item_discount_percentage = isset($item['discount']) ? $item['discount'] : 0;
 
-            $ITEM_MASTER = new ItemMaster($item['item_id']);
+            $item_id = $item['item_id'] ?? '';
+            $code = $item['code'] ?? '';
+            $arn_no = $item['arn_no'] ?? '';
 
-            //GET ARN ID BY ARN NO FIRST
-            $ARN_MASTER = new ArnMaster(NULL);
-            $arn_id = $ARN_MASTER->getArnIdByArnNo($item['arn_no']);
-            
-            // Get the correct department_id for this ARN before saving item
-            $db = new Database();
-            $deptQuery = "SELECT department_id FROM stock_item_tmp WHERE arn_id = '{$arn_id}' AND item_id = '{$item['item_id']}' LIMIT 1";
-            $deptResult = $db->readQuery($deptQuery);
-            $correctDepartmentId = $_POST['department_id']; // fallback to form department
-            
-            if ($deptRow = mysqli_fetch_assoc($deptResult)) {
-                $correctDepartmentId = $deptRow['department_id'];
-            }
+            if (!empty($item_id)) {
+                $ITEM_MASTER = new ItemMaster($item_id);
 
-            $invoice_type = $SALES_INVOICE->invoice_type;
+                //GET ARN ID BY ARN NO FIRST
+                $ARN_MASTER = new ArnMaster(NULL);
+                $arn_id = $ARN_MASTER->getArnIdByArnNo($arn_no);
+                
+                // Get the correct department_id for this ARN before saving item
+                $db = new Database();
+                $deptQuery = "SELECT department_id FROM stock_item_tmp WHERE arn_id = '{$arn_id}' AND item_id = '{$item_id}' LIMIT 1";
+                $deptResult = $db->readQuery($deptQuery);
+                $correctDepartmentId = $_POST['department_id']; // fallback to form department
+                
+                if ($deptRow = mysqli_fetch_assoc($deptResult)) {
+                    $correctDepartmentId = $deptRow['department_id'];
+                }
 
-            $SALES_ITEM = new SalesInvoiceItem(NULL);
+                $invoice_type = $SALES_INVOICE->invoice_type;
 
-            $SALES_ITEM->invoice_id = $invoiceTableId;
+                $SALES_ITEM = new SalesInvoiceItem(NULL);
 
-            if (substr($item['code'], 0, 2) !== 'SI') {
-                // Regular item
-                $SALES_ITEM->item_code = $item['item_id'];
-                $SALES_ITEM->quantity = $item['qty'];
-                $qty_for_total = $item['qty'];
-                $qty_for_stock = $item['qty']; // Use regular qty for stock management
-            } else {
-                // Service item - main qty should always be 1, but use service_qty for calculations
-                $SALES_ITEM->service_item_code = $item['item_id'];
-                $SALES_ITEM->quantity = 1; // Always 1 for service items in the invoice table
-                $qty_for_total = $item['service_qty']; // Use service_qty for price calculations
-                $qty_for_stock = $item['service_qty']; // Use service_qty for stock management
-            }
+                $SALES_ITEM->invoice_id = $invoiceTableId;
 
-            $item_discount_amount = ($item['price'] * $qty_for_total) * $item_discount_percentage / 100;
+                if (substr($code, 0, 2) !== 'SI') {
+                    // Regular item
+                    $SALES_ITEM->item_code = $item_id;
+                    $SALES_ITEM->quantity = $item['qty'] ?? 0;
+                    $qty_for_total = $item['qty'] ?? 0;
+                    $qty_for_stock = $item['qty'] ?? 0; // Use regular qty for stock management
+                } else {
+                    // Service item - main qty should always be 1, but use service_qty for calculations
+                    $SALES_ITEM->service_item_code = $item_id;
+                    $SALES_ITEM->quantity = 1; // Always 1 for service items in the invoice table
+                    $qty_for_total = $item['service_qty'] ?? 0; // Use service_qty for price calculations
+                    $qty_for_stock = $item['service_qty'] ?? 0; // Use service_qty for stock management
+                }
 
-            $SALES_ITEM->item_name = $item['name'] . '|ARN:' . $arn_id . '|DEPT:' . $correctDepartmentId;
-            $SALES_ITEM->price = $invoice_type === 'customer' ? $customer_price : $dealer_price;
-            $SALES_ITEM->customer_price = $customer_price; // Save the customer price
-            $SALES_ITEM->dealer_price = $dealer_price; // Save the dealer price
-            $SALES_ITEM->cost = $item['cost']; // Set the cost field
-            $SALES_ITEM->discount = $item_discount_amount;
-            $SALES_ITEM->total = ($item['selling_price'] * $qty_for_total);
-            $SALES_ITEM->vehicle_no = isset($item['vehicle_no']) ? $item['vehicle_no'] : '';
-            $SALES_ITEM->current_km = isset($item['current_km']) ? $item['current_km'] : '';
-            $SALES_ITEM->next_service_date = (isset($item['next_service_days']) && !empty($item['next_service_days']) && intval($item['next_service_days']) > 0) ? date('Y-m-d', strtotime($SALES_INVOICE->invoice_date . ' + ' . $item['next_service_days'] . ' days')) : null;
-            $SALES_ITEM->created_at = date("Y-m-d H:i:s");
-            $SALES_ITEM->create();
+                $price = floatval($item['price'] ?? 0);
+                $selling_price = floatval($item['selling_price'] ?? $price);
+                $item_discount_amount = ($price * $qty_for_total) * $item_discount_percentage / 100;
 
-            //stock master update quantity
-            $STOCK_MASTER = new StockMaster(NULL);
-            $currentQty = $STOCK_MASTER->getAvailableQuantity($_POST['department_id'], $item['item_id']);
-            $newQty = $currentQty - $qty_for_stock; // Use the correct quantity for stock management
-            $STOCK_MASTER->quantity = $newQty;
-            $STOCK_MASTER->updateQtyByItemAndDepartment($_POST['department_id'], $item['item_id'], $newQty);
+                $SALES_ITEM->item_name = ($item['name'] ?? '') . '|ARN:' . $arn_id . '|DEPT:' . $correctDepartmentId;
+                $SALES_ITEM->price = $invoice_type === 'customer' ? ($item['customer_price'] ?? $price) : ($item['dealer_price'] ?? $price);
+                $SALES_ITEM->customer_price = $item['customer_price'] ?? $price; // Save the customer price
+                $SALES_ITEM->dealer_price = $item['dealer_price'] ?? $price; // Save the dealer price
+                $SALES_ITEM->cost = $item['cost'] ?? 0; // Set the cost field
+                $SALES_ITEM->discount = $item_discount_amount;
+                $SALES_ITEM->total = ($selling_price * $qty_for_total);
+                $SALES_ITEM->vehicle_no = isset($item['vehicle_no']) ? $item['vehicle_no'] : '';
+                $SALES_ITEM->current_km = isset($item['current_km']) ? $item['current_km'] : '';
+                $SALES_ITEM->next_service_date = (isset($item['next_service_days']) && !empty($item['next_service_days']) && intval($item['next_service_days']) > 0) ? date('Y-m-d', strtotime($SALES_INVOICE->invoice_date . ' + ' . $item['next_service_days'] . ' days')) : null;
+                $SALES_ITEM->created_at = date("Y-m-d H:i:s");
+                $SALES_ITEM->sales_order_id = isset($sales_order_ids[$key]) ? $sales_order_ids[$key] : null;
+                
+                // Debug logging
+                error_log("Setting sales_order_id for item $key: " . ($SALES_ITEM->sales_order_id ?? 'NULL'));
+                
+                $SALES_ITEM->create();
 
-            // Update stock transaction with ARN reference if available
-            $STOCK_TRANSACTION = new StockTransaction(NULL);
-            $STOCK_TRANSACTION->item_id = $item['item_id'];
+                //stock master update quantity
+                $STOCK_MASTER = new StockMaster(NULL);
+                $currentQty = $STOCK_MASTER->getAvailableQuantity($_POST['department_id'], $item_id);
+                $newQty = $currentQty - $qty_for_stock; // Use the correct quantity for stock management
+                $STOCK_MASTER->quantity = $newQty;
+                $STOCK_MASTER->updateQtyByItemAndDepartment($_POST['department_id'], $item_id, $newQty);
 
-            // Update stock_item_tmp for ARN-based inventory
-            $STOCK_ITEM_TMP = new StockItemTmp(NULL);
-            // Use negative qty to reduce stock
-            $qtyToDeduct = -abs($qty_for_stock); // Use correct quantity for stock deduction
-            
-            $STOCK_ITEM_TMP->updateQtyByArnId(
-                $arn_id,
-                $item['item_id'],
-                $correctDepartmentId, // Use the correct department for this ARN
-                $qtyToDeduct
-            );
+                // Update stock transaction with ARN reference if available
+                $STOCK_TRANSACTION = new StockTransaction(NULL);
+                $STOCK_TRANSACTION->item_id = $item_id;
 
+                // Update stock_item_tmp for ARN-based inventory
+                $STOCK_ITEM_TMP = new StockItemTmp(NULL);
+                // Use negative qty to reduce stock
+                $qtyToDeduct = -abs($qty_for_stock); // Use correct quantity for stock deduction
+                
+                if (!empty($arn_id)) {
+                    $STOCK_ITEM_TMP->updateQtyByArnId(
+                        $arn_id,
+                        $item_id,
+                        $correctDepartmentId, // Use the correct department for this ARN
+                        $qtyToDeduct
+                    );
+                }
 
-            //stock transaction table update
-            $STOCK_TRANSACTION->type = 4; // get this id from stock adjustment type table PK
-            $STOCK_TRANSACTION->date = date("Y-m-d");
-            $STOCK_TRANSACTION->qty_in = 0;
-            $STOCK_TRANSACTION->qty_out = $qty_for_stock; // Use correct quantity for transaction record
-            $STOCK_TRANSACTION->remark = "INVOICE #$invoiceId " . (!empty($item['arn_id']) ? "(ARN: {$item['arn']}) " : "") . "Issued " . date("Y-m-d H:i:s");
-            $STOCK_TRANSACTION->created_at = date("Y-m-d H:i:s");
-            $STOCK_TRANSACTION->create();
+                //stock transaction table update
+                $STOCK_TRANSACTION->type = 4; // get this id from stock adjustment type table PK
+                $STOCK_TRANSACTION->date = date("Y-m-d");
+                $STOCK_TRANSACTION->qty_in = 0;
+                $STOCK_TRANSACTION->qty_out = $qty_for_stock; // Use correct quantity for transaction record
+                $STOCK_TRANSACTION->remark = "INVOICE #$invoiceId " . (!empty($arn_id) ? "(ARN: {$arn_id}) " : "") . "Issued " . date("Y-m-d H:i:s");
+                $STOCK_TRANSACTION->created_at = date("Y-m-d H:i:s");
+                $STOCK_TRANSACTION->create();
 
-            if ($paymentType == 1) {
-                $payments = json_decode($_POST['payments'], true); // decode JSON â†’ array
+                if ($paymentType == 1) {
+                    $payments = json_decode($_POST['payments'], true); // decode JSON → array
 
-                if (is_array($payments)) {
-                    foreach ($payments as $payment) {
-                        $INVOICE_PAYMENT = new InvoicePayment(NULL);
-                        $INVOICE_PAYMENT->invoice_id  = $invoiceTableId;
-                        $INVOICE_PAYMENT->method_id   = $payment['method_id'];
-                        $INVOICE_PAYMENT->amount      = $payment['amount'];
-                        $INVOICE_PAYMENT->reference_no = $payment['reference_no'] ?? null;
-                        $INVOICE_PAYMENT->bank_name    = $pssayment['bank_name'] ?? null;
-                        $INVOICE_PAYMENT->cheque_date  = $payment['cheque_date'] ?? null;
+                    if (is_array($payments)) {
+                        foreach ($payments as $payment) {
+                            $INVOICE_PAYMENT = new InvoicePayment(NULL);
+                            $INVOICE_PAYMENT->invoice_id  = $invoiceTableId;
+                            $INVOICE_PAYMENT->method_id   = $payment['method_id'];
+                            $INVOICE_PAYMENT->amount      = $payment['amount'];
+                            $INVOICE_PAYMENT->reference_no = $payment['reference_no'] ?? null;
+                            $INVOICE_PAYMENT->bank_name    = $payment['bank_name'] ?? null;
+                            $INVOICE_PAYMENT->cheque_date  = $payment['cheque_date'] ?? null;
 
-                        $res = $INVOICE_PAYMENT->create();
+                            $res = $INVOICE_PAYMENT->create();
+                        }
                     }
                 }
+                //audit log 
+                $AUDIT_LOG = new AuditLog(NULL);
+                $AUDIT_LOG->ref_id = $invoiceTableId;
+                $AUDIT_LOG->ref_code = $_POST['invoice_no'];
+                $AUDIT_LOG->action = 'CREATE';
+                $AUDIT_LOG->description = 'CREATE INVOICE NO #' . $invoiceTableId;
+                $AUDIT_LOG->user_id = $_SESSION['id'];
+                $AUDIT_LOG->created_at = date("Y-m-d H:i:s");
+                $AUDIT_LOG->create();
             }
-            //audit log 
-            $AUDIT_LOG = new AuditLog(NUll);
-            $AUDIT_LOG->ref_id = $invoiceTableId;
-            $AUDIT_LOG->ref_code = $_POST['invoice_no'];
-            $AUDIT_LOG->action = 'CREATE';
-            $AUDIT_LOG->description = 'CREATE INVOICE NO #' . $invoiceTableId;
-            $AUDIT_LOG->user_id = $_SESSION['id'];
-            $AUDIT_LOG->created_at = date("Y-m-d H:i:s");
-            $AUDIT_LOG->create();
+        }
+
+        // Update sales order status to 1 (invoiced) for any sales orders associated with this invoice
+        $salesOrderIds = [];
+        foreach ($items as $item) {
+            if (!empty($item['sales_order_id'])) {
+                $salesOrderIds[] = $item['sales_order_id'];
+            }
+        }
+        
+        // Debug logging
+        error_log("Found sales order IDs for invoicing: " . print_r($salesOrderIds, true));
+        
+        // Remove duplicates and update sales order statuses to 1 (invoiced)
+        $salesOrderIds = array_unique($salesOrderIds);
+        foreach ($salesOrderIds as $salesOrderId) {
+            error_log("Updating sales order $salesOrderId to status 1 (invoiced)");
+            $SALES_ORDER = new SalesOrder($salesOrderId);
+            $result = $SALES_ORDER->markAsInvoiced();
+            error_log("Sales order $salesOrderId update result: " . ($result ? 'SUCCESS' : 'FAILED'));
         }
 
         echo json_encode([
@@ -467,18 +674,28 @@ if (isset($_POST['action']) && $_POST['action'] == 'cancel') {
             }
         }
 
-        //audit log
-        $AUDIT_LOG = new AuditLog(NULL);
-        $AUDIT_LOG->ref_id = $invoiceId;
-        $AUDIT_LOG->ref_code = $invoiceId;
-        $AUDIT_LOG->action = 'CANCEL';
-        $AUDIT_LOG->description = 'CANCEL INVOICE NO #' . $SALES_INVOICE->invoice_no;
-        $AUDIT_LOG->user_id = $_SESSION['id'];
-        $AUDIT_LOG->created_at = date("Y-m-d H:i:s");
-        $AUDIT_LOG->create();
-        
         $CUSTOMER_MASTER = new CustomerMaster($SALES_INVOICE->customer_id);
         $CUSTOMER_MASTER->updateCustomerOutstanding($SALES_INVOICE->customer_id, $SALES_INVOICE->grand_total, false);
+
+        // Update sales order status to 2 (invoice cancelled) for any sales orders associated with this invoice
+        $salesOrderIds = [];
+        foreach ($items as $item) {
+            if (!empty($item['sales_order_id'])) {
+                $salesOrderIds[] = $item['sales_order_id'];
+            }
+        }
+        
+        // Debug logging
+        error_log("Found sales order IDs for cancellation: " . print_r($salesOrderIds, true));
+        
+        // Remove duplicates and update sales order statuses
+        $salesOrderIds = array_unique($salesOrderIds);
+        foreach ($salesOrderIds as $salesOrderId) {
+            error_log("Updating sales order $salesOrderId to status 2 (cancelled)");
+            $SALES_ORDER = new SalesOrder($salesOrderId);
+            $result = $SALES_ORDER->markAsInvoiceCancelled();
+            error_log("Sales order $salesOrderId update result: " . ($result ? 'SUCCESS' : 'FAILED'));
+        }
 
         echo json_encode(['status' => 'success', 'message' => 'Invoice cancelled successfully']);
     } else {
