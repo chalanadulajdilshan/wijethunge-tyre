@@ -2811,10 +2811,50 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     const itemId = row.data('item-id');
     const itemCode = row.find('td').eq(1).text();
     const itemName = row.find('td').eq(2).text();
-    const orderQty = row.find('.order-qty').text();
+    const orderQty = parseInt(row.find('.order-qty').text()) || 0;
+    const stockQty = parseInt(row.find('.stock-qty').text()) || 0;
     const selectedPrice = row.find('.selected-price').text();
     const discount = row.find('.discount-input').val();
     const sellingPrice = row.find('.selling-price').text();
+
+    // Check stock availability
+    if (stockQty <= 0) {
+      swal({
+        title: "No Stock Available",
+        text: `Item "${itemName}" (${itemCode}) has no stock available. Cannot add to invoice.`,
+        type: "warning",
+        confirmButtonText: "OK"
+      });
+      return;
+    }
+
+    // Determine quantity to add (minimum of order qty and stock qty)
+    const qtyToAdd = Math.min(orderQty, stockQty);
+    
+    // Show confirmation if we're adding less than ordered quantity
+    if (qtyToAdd < orderQty) {
+      swal({
+        title: "Limited Stock Available",
+        text: `Item "${itemName}" (${itemCode}) has only ${stockQty} units in stock, but ${orderQty} units were ordered. Only ${qtyToAdd} units will be added to the invoice.`,
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Add Available Stock",
+        cancelButtonText: "Cancel"
+      }, function(isConfirm) {
+        if (isConfirm) {
+          processAddToInvoice(row, orderId, orderDbId, itemId, itemCode, itemName, qtyToAdd, selectedPrice, discount, sellingPrice);
+        }
+      });
+    } else {
+      // Stock is sufficient, add normally
+      processAddToInvoice(row, orderId, orderDbId, itemId, itemCode, itemName, qtyToAdd, selectedPrice, discount, sellingPrice);
+    }
+  });
+
+  // Helper function to process adding item to invoice
+  function processAddToInvoice(row, orderId, orderDbId, itemId, itemCode, itemName, qty, selectedPrice, discount, sellingPrice) {
 
     // Get order data from the row's data attributes
     const orderDataJson = row.data('order-data');
@@ -2849,8 +2889,8 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       $("#marketing_executive").trigger('change');
     }
 
-    // Add to main invoice table
-    addSalesOrderItemToInvoice(orderId, itemId, itemCode, itemName, orderQty, selectedPrice, sellingPrice, discount, orderDbId);
+    // Add to main invoice table using the validated quantity
+    addSalesOrderItemToInvoice(orderId, itemId, itemCode, itemName, qty, selectedPrice, sellingPrice, discount, orderDbId);
 
     // Update sales order status to 1 (invoiced)
     updateSalesOrderStatus(orderDbId);
@@ -2862,7 +2902,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     if ($("#salesRepOrdersBody tr:not(#noSalesRepOrdersRow)").length === 0) {
       $("#noSalesRepOrdersRow").show();
     }
-  });
+  }
 
   // Function to update sales order status to 1 (invoiced)
   function updateSalesOrderStatus(orderDbId) {
