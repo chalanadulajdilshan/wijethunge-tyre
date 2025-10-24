@@ -93,7 +93,10 @@ jQuery(document).ready(function ($) {
       .not("#noItemRow")
       .each(function () {
         const overdue = parseAmount($(this).find(".invoice-overdue").text());
-        const chequePay = parseAmount($(this).find(".cheque-pay").val());
+        let chequePay = 0;
+        $(this).find(".cheque-pay").each(function () {
+          chequePay += parseAmount($(this).val());
+        });
         const cashPay = parseAmount($(this).find(".cash-pay").val());
         const paidAmount = chequePay + cashPay;
         const balance = overdue - paidAmount;
@@ -180,14 +183,17 @@ jQuery(document).ready(function ($) {
         $select.val(selectedValue);
       } else {
         $select.val("");
-        $row.find(".cheque-pay").val("0.00");
+        $select.closest(".cheque-item").find(".cheque-pay").val("0.00");
       }
     });
   }
 
   function updateRowBalance($row) {
     const overdue = parseAmount($row.find(".invoice-overdue").text());
-    const chequePay = parseAmount($row.find(".cheque-pay").val());
+    let chequePay = 0;
+    $row.find(".cheque-pay").each(function () {
+      chequePay += parseAmount($(this).val());
+    });
     const cashPay = parseAmount($row.find(".cash-pay").val());
     const paidAmount = chequePay + cashPay;
     const remaining = overdue - paidAmount;
@@ -196,10 +202,10 @@ jQuery(document).ready(function ($) {
   }
 
   function updateChequePayDisabledState() {
-    $(".cheque-select").each(function () {
-      const $select = $(this);
-      const $row = $select.closest("tr");
-      const $chequeInput = $row.find(".cheque-pay");
+    $(".cheque-item").each(function () {
+      const $item = $(this);
+      const $select = $item.find(".cheque-select");
+      const $chequeInput = $item.find(".cheque-pay");
       const selectedChequeId = $select.val();
 
       if (selectedChequeId) {
@@ -213,18 +219,9 @@ jQuery(document).ready(function ($) {
   function validateChequePayment($input, $row) {
     let inputVal = parseAmount($input.val());
     const overdue = parseAmount($row.find(".invoice-overdue").text());
-    const selectedChequeId = $row.find(".cheque-select").val();
+    const $chequeItem = $input.closest(".cheque-item");
+    const selectedChequeId = $chequeItem.find(".cheque-select").val();
     if (!selectedChequeId) {
-      $input.val("0.00");
-      updateRowBalance($row); // Update Paid Amount and Balance Amount
-      updateState();
-      return 0;
-    }
-
-    const selectedCheque = state.chequeInfo.find(
-      (c) => c.id === selectedChequeId
-    );
-    if (!selectedCheque) {
       $input.val("0.00");
       updateRowBalance($row); // Update Paid Amount and Balance Amount
       updateState();
@@ -235,10 +232,21 @@ jQuery(document).ready(function ($) {
     $(".cheque-select").each(function () {
       const $currentSelect = $(this);
       const $currentRow = $currentSelect.closest("tr");
-      if ($currentSelect.val() === selectedChequeId && !$currentRow.is($row)) {
-        usedAmount += parseAmount($currentRow.find(".cheque-pay").val());
+      const $currentItem = $currentSelect.closest(".cheque-item");
+      if ($currentSelect.val() === selectedChequeId && !$currentItem.is($chequeItem)) {
+        usedAmount += parseAmount($currentItem.find(".cheque-pay").val());
       }
     });
+
+    const selectedCheque = state.chequeInfo.find(
+      (c) => c.id === selectedChequeId
+    );
+    if (!selectedCheque) {
+      $input.val("0.00");
+      updateRowBalance($row); // Update Paid Amount and Balance Amount
+      updateState();
+      return 0;
+    }
 
     const remainingBalance = selectedCheque.amount - usedAmount;
     const maxAllowed = Math.min(overdue, remainingBalance);
@@ -336,6 +344,7 @@ jQuery(document).ready(function ($) {
   $(document).on("change", ".cheque-select", function () {
     const $select = $(this);
     const $row = $select.closest("tr");
+    const $chequeItem = $select.closest(".cheque-item");
 
     // Update hidden input fields with selected cheque details
     const selectedOption = $select.find("option:selected");
@@ -343,16 +352,17 @@ jQuery(document).ready(function ($) {
       const chequeId = selectedOption.val();
       const cheque = state.chequeInfo.find((c) => c.id === chequeId);
       if (cheque) {
-        $row.find(".cheque-no").val(cheque.chequeNo);
-        $row.find(".cheque-date").val(cheque.chequeDate);
-        $row.find(".bank-branch").val(cheque.bankBranchId);
+        $chequeItem.find(".cheque-no").val(cheque.chequeNo);
+        $chequeItem.find(".cheque-date").val(cheque.chequeDate);
+        $chequeItem.find(".bank-branch").val(cheque.bankBranchId);
+        $chequeItem.find(".bank-id").val(cheque.bankId);
       }
     } else {
       // Clear the fields if no cheque is selected
-      $row.find(".cheque-no, .cheque-date, .bank-branch").val("");
+      $chequeItem.find(".cheque-no, .cheque-date, .bank-branch, .bank-id").val("");
     }
     const selectedChequeId = $select.val();
-    const $chequeInput = $row.find(".cheque-pay");
+    const $chequeInput = $chequeItem.find(".cheque-pay");
     const prevChequeId = $select.data("prev-cheque");
 
     if (prevChequeId && prevChequeId !== selectedChequeId) {
@@ -370,11 +380,12 @@ jQuery(document).ready(function ($) {
         $(".cheque-select").each(function () {
           const $currentSelect = $(this);
           const $currentRow = $currentSelect.closest("tr");
+          const $currentItem = $currentSelect.closest(".cheque-item");
           if (
             $currentSelect.val() === selectedChequeId &&
-            !$currentRow.is($row)
+            !$currentItem.is($chequeItem)
           ) {
-            usedAmount += parseAmount($currentRow.find(".cheque-pay").val());
+            usedAmount += parseAmount($currentItem.find(".cheque-pay").val());
           }
         });
         const remainingBalance = selectedCheque.amount - usedAmount;
@@ -513,8 +524,9 @@ jQuery(document).ready(function ($) {
         type: "error",
         timer: CONFIG.SWAL_TIMEOUT,
         showConfirmButton: false,
-      });
-    }
+    });
+  updateState();
+}
 
     $("#noItemRow").remove();
     const chequeId = "cheque_" + Date.now();
@@ -524,6 +536,7 @@ jQuery(document).ready(function ($) {
       chequeDate,
       bankBranch,
       bankBranchId,
+      bankId: $("#bank_id").val() || null,
       amount,
       used: false,
       usedAmount: 0,
@@ -583,7 +596,32 @@ jQuery(document).ready(function ($) {
     const bankBranchName = $(this).find("td:eq(2)").text();
     $("#bank_branch").val(branchId);
     $("#bank_branch_name").val(bankBranchName);
+    $("#bank_id").val($(this).data("bankid"));
     $("#branch_master").modal("hide");
+  });
+
+  $(document).on("click", ".add-another-cheque", function () {
+    const invoiceId = $(this).data("invoice-id");
+    const $container = $(`.cheque-container[data-invoice-id="${invoiceId}"]`);
+    const $firstItem = $container.find(".cheque-item").first();
+    const newItem = $firstItem.clone();
+    // Reset values
+    newItem.find(".cheque-pay").val("0.00");
+    newItem.find(".cheque-select").val("");
+    newItem.find(".cheque-no, .cheque-date, .bank-branch, .bank-id").val("");
+    newItem.find(".remove-cheque-item").show();
+    $container.find(".cheque-item .remove-cheque-item").show();
+    $container.append(newItem);
+    updateState();
+    updateChequePayDisabledState();
+  });
+
+  $(document).on("click", ".remove-cheque-item", function () {
+    const $container = $(this).closest(".cheque-container");
+    if ($container.find(".cheque-item").length > 1) {
+      $(this).closest(".cheque-item").remove();
+      updateState();
+    }
   });
 
   let customerTableInitialized = false;
@@ -678,28 +716,34 @@ jQuery(document).ready(function ($) {
                   overdue
                 )}</span></td>
                 <td>
-                  <input type="text" name="cheque_pay[]" class="form-control form-control-sm cheque-pay" value="0.00">
-                  <select name="cheque_select[]" class="form-select form-select-sm mt-1 cheque-select">
-                    <option value="">Select Cheque</option>
-                    ${state.chequeInfo
-                      .map(
-                        (cheque) =>
-                          `<option value="${cheque.id}" data-amount="${
-                            cheque.amount
-                          }" ${cheque.used ? "disabled" : ""}>
-                        ${cheque.chequeNo} (${formatAmount(cheque.amount)})
-                      </option>`
-                      )
-                      .join("")}
-                  </select>
-                  <input type="hidden" name="cheque_no[]" class="form-control form-control-sm cheque-no" value="">
-                  <input type="hidden" name="cheque_date[]" class="form-control form-control-sm cheque-date" value="">
-                  <input type="hidden" name="bank_branch[]" class="form-control form-control-sm bank-branch" value="">
+                  <div class="cheque-container" data-invoice-id="${invoice.id}">
+                    <div class="cheque-item">
+                      <input type="text" name="cheque_pay[${invoice.id}][]" class="form-control form-control-sm cheque-pay" value="0.00">
+                      <select name="cheque_select[${invoice.id}][]" class="form-select form-select-sm mt-1 cheque-select">
+                        <option value="">Select Cheque</option>
+                        ${state.chequeInfo
+                          .map(
+                            (cheque) =>
+                              `<option value="${cheque.id}" data-amount="${
+                                cheque.amount
+                              }" ${cheque.used ? "disabled" : ""}>
+                            ${cheque.chequeNo} (${formatAmount(cheque.amount)})
+                          </option>`
+                          )
+                          .join("")}
+                      </select>
+                      <input type="hidden" name="cheque_no[${invoice.id}][]" class="form-control form-control-sm cheque-no" value="">
+                      <input type="hidden" name="cheque_date[${invoice.id}][]" class="form-control form-control-sm cheque-date" value="">
+                      <input type="hidden" name="bank_branch[${invoice.id}][]" class="form-control form-control-sm bank-branch" value="">
+                      <input type="hidden" name="bank_id[${invoice.id}][]" class="form-control form-control-sm bank-id" value="">
+                      <button type="button" class="btn btn-sm btn-danger remove-cheque-item mt-1" style="display: none;">Remove</button>
+                    </div>
+                  </div>
                 </td>
                 <td><input type="text" name="cash_pay[]" disabled class="form-control form-control-sm cash-pay" value="0.00"></td>
                 <td class="paid-amount">${formatAmount(0)}</td>
                 <td class="balance-amount">${formatAmount(overdue)}</td>
-                <td><button type="button" class="btn btn-sm btn-danger remove-row"><i class="uil uil-trash"></i></button></td>
+                <td><button type="button" class="btn btn-sm btn-primary add-another-cheque" data-invoice-id="${invoice.id}"><i class="uil uil-plus"></i></button> <button type="button" class="btn btn-sm btn-danger remove-row"><i class="uil uil-trash"></i></button></td>
               </tr>
             `);
           });
@@ -813,35 +857,47 @@ jQuery(document).ready(function ($) {
 
     $(".someBlock").preloader();
 
-    // Get cash and cheque amounts
-    const cashAmount = parseAmount($("#cash_total").val());
-    const chequeAmount = parseAmount($("#cheque_total").val());
-    const totalAmount = cashAmount + chequeAmount;
-
-    // Create payment methods array
+    // Get cash and cheque amounts per invoice
     const paymentMethods = [];
 
-    // Add cash payment method if cash amount > 0
-    if (cashAmount > 0) {
-      paymentMethods.push({
-        payment_type_id: 1, // Assuming 1 = cash
-        amount: cashAmount,
-        invoice_id: null, // You may want to set this based on your logic
-      });
-    }
+    // Loop through each invoice
+    $("#invoiceBody tr").not("#noItemRow").each(function () {
+      const $row = $(this);
+      const invoiceId = $row.find("input[name='invoice_id[]']").val();
 
-    // Add cheque payment method if cheque amount > 0
-    if (chequeAmount > 0) {
-      paymentMethods.push({
-        payment_type_id: 2, // Assuming 2 = cheque
-        amount: chequeAmount,
-        invoice_id: null, // You may want to set this based on your logic
-        cheq_no: $("#cheque_no").val() || null,
-        bank_id: $("#bank_id").val() || null,
-        branch_id: $("#branch_id").val() || null,
-        cheq_date: $("#cheque_date").val() || null,
+      // Add cash payment for this invoice
+      const cashPay = parseAmount($row.find(".cash-pay").val());
+      if (cashPay > 0) {
+        paymentMethods.push({
+          payment_type_id: 1, // cash
+          amount: cashPay,
+          invoice_id: invoiceId,
+        });
+      }
+
+      // Add cheque payments for this invoice
+      $row.find(".cheque-item").each(function () {
+        const $item = $(this);
+        const chequePay = parseAmount($item.find(".cheque-pay").val());
+        const chequeNo = $item.find(".cheque-no").val();
+        const chequeDate = $item.find(".cheque-date").val();
+        const bankBranch = $item.find(".bank-branch").val();
+        const bankId = $item.find(".bank-id").val();
+        if (chequePay > 0 && chequeNo) {
+          paymentMethods.push({
+            payment_type_id: 2, // cheque
+            amount: chequePay,
+            invoice_id: invoiceId,
+            cheq_no: chequeNo,
+            cheq_date: chequeDate,
+            bank_id: bankId,
+            branch_id: bankBranch,
+          });
+        }
       });
-    }
+    });
+
+    const totalAmount = paymentMethods.reduce((sum, method) => sum + method.amount, 0);
 
     const formData = new FormData($("#form-data")[0]);
 
