@@ -653,4 +653,17 @@ class SalesInvoice
         $result = mysqli_fetch_array($db->readQuery($query));
         return $result;
     }
+
+    // Check if invoice has been partially paid (has outstanding_settle_amount > 0)
+    public function isInvoicePartiallyPaid($invoice_id)
+    {
+        $query = "SELECT `outstanding_settle_amount` FROM `sales_invoice` WHERE `id` = $invoice_id LIMIT 1";
+        $db = new Database();
+        $result = mysqli_fetch_array($db->readQuery($query));
+        
+        if ($result) {
+            return floatval($result['outstanding_settle_amount']) > 0;
+        }
+        return false;
+    }
 }

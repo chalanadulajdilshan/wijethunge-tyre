@@ -2,6 +2,9 @@ jQuery(document).ready(function () {
   //WINDOWS LOADER
   loadCustomer();
   getInvoiceData();
+  
+  // Check if current invoice is partially paid and disable cancel button if needed
+  checkInvoicePaymentStatus();
 
   $("#view_price_report").on("click", function (e) {
     e.preventDefault();
@@ -825,6 +828,39 @@ jQuery(document).ready(function () {
       },
       error: function () {
         console.error("Failed to fetch invoice ID");
+      },
+    });
+  }
+
+  // Check if invoice is partially paid and disable cancel button if needed
+  function checkInvoicePaymentStatus() {
+    const invoiceId = $("#invoice_id").val();
+    
+    if (!invoiceId) {
+      return; // No invoice ID, nothing to check
+    }
+
+    $.ajax({
+      url: "ajax/php/sales-invoice.php",
+      method: "POST",
+      data: {
+        get_by_id: true,
+        id: invoiceId,
+      },
+      dataType: "json",
+      success: function (response) {
+        if (response && response.outstanding_settle_amount && parseFloat(response.outstanding_settle_amount) > 0) {
+          // Invoice has been partially paid, disable cancel button
+          $(".cancel-invoice").prop("disabled", true).addClass("disabled")
+            .attr("title", "Cannot cancel invoice that has been partially paid");
+        } else {
+          // Invoice not partially paid, enable cancel button
+          $(".cancel-invoice").prop("disabled", false).removeClass("disabled")
+            .removeAttr("title");
+        }
+      },
+      error: function () {
+        console.error("Failed to check invoice payment status");
       },
     });
   }
@@ -2120,6 +2156,11 @@ if ($("input[name='payment_type']:checked").val() === "2") {
 
   // CANCEL INVOICE FUNCTION
   $(document).on("click", ".cancel-invoice", function () {
+    // Check if button is disabled
+    if ($(this).prop("disabled") || $(this).hasClass("disabled")) {
+      return false;
+    }
+    
     const invoiceId = $("#invoice_id").val();
     let arnIds = getAllArnIds();
 
@@ -2177,7 +2218,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
             } else if (jsonStr.status === "error") {
               swal({
                 title: "Error!",
-                text: "Failed to cancel the invoice. Please try again.",
+                text: jsonStr.message || "Failed to cancel the invoice. Please try again.",
                 type: "error",
                 timer: 3000,
                 showConfirmButton: false,
