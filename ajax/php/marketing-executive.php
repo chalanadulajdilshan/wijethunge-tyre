@@ -22,10 +22,12 @@ if (isset($_POST['create'])) {
 
     $res = $EXECUTIVE->create();
 
+
+
     if ($res) {
 
         $name = $_POST['full_name'];
-        $code = $_POST['code'];
+        $code = $_POST['user_id'];
         $type = 3;
         $company_id = 1;
         $active = 1;

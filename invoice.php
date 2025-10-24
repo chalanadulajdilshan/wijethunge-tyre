@@ -113,7 +113,7 @@ $MarketingExecutive = new MarketingExecutive($SALES_INVOICE->marketing_executive
         }
     </style>
 
-</head
+    </head>
 
     <body data-layout="horizontal" data-topbar="colored">
 

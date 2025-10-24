@@ -117,7 +117,10 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                                                 <div class="input-group mb-3">
                                                     <input id="code" name="code" type="text" class="form-control"
                                                         placeholder="Enter Department Code" readonly
-                                                        value="<?php echo $marketing_ex_id ?>">
+                                                        value="<?php echo $marketing_ex_id 
+                                                       
+                                                        
+                                                        ?>">
 
 
                                                     <button class="btn btn-info" type="button" data-bs-toggle="modal"
@@ -181,7 +184,7 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                                             <div class="col-md-3">
                                                 <label class="form-label" for="user_name">User Name</label>
 
-                                                <input id="code" name="code" type="text"
+                                                <input id="user_id" name="user_id" type="text"
                                                     class="form-control" value="<?php echo $user_id ?>" hidden>
                                                 <input id="user_name" name="user_name" type="text"
                                                     class="form-control" placeholder="User Name">
