@@ -81,6 +81,7 @@ include_once(dirname(__FILE__) . '/PaymentReceiptSupplier.php');
 include_once(dirname(__FILE__) . '/PaymentReceiptMethodSupplier.php');
 include_once(dirname(__FILE__) . '/SalesOrder.php');
 include_once(dirname(__FILE__) . '/SalesOrderItem.php');
+include_once(dirname(__FILE__) . '/MonthlyTarget.php');
 
 session_start();
 function dd($data)
