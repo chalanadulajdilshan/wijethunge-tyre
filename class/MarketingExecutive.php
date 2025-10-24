@@ -56,7 +56,6 @@ class MarketingExecutive
                 '$this->code', '$this->full_name', '$this->nic', '$this->mobile_number', '$this->whatsapp_number',
                 '$this->target_month', '$this->target', '$this->commission', '$this->joined_date', '$this->is_active', '$this->remark', NOW()
             )";
-
         $db = new Database();
         $result = $db->readQuery($query);
 
