@@ -610,6 +610,12 @@ if (isset($_POST['action']) && $_POST['action'] == 'cancel') {
         exit();
     }
     
+    // Check if invoice has been partially paid
+    if ($SALES_INVOICE->isInvoicePartiallyPaid($invoiceId)) {
+        echo json_encode(['status' => 'error', 'message' => 'Cannot cancel invoice that has been partially paid through payment receipts']);
+        exit();
+    }
+    
     $result = $SALES_INVOICE->cancel();
 
     if ($result) {
