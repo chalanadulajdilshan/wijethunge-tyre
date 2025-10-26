@@ -1,4 +1,39 @@
 @import url(../../../../css2.css);
+
+   .mini-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #fff;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .mini-card:hover {
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .mini-card i {
+            font-size: 22px;
+            color: #007bff;
+            margin-bottom: 8px;
+        }
+
+        .mini-card h6 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .mini-card p {
+            font-size: 17px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 0;
+        }
+        
  .ai-chat-button {
         position: fixed;
         top: 92%;

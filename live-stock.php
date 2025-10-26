@@ -31,6 +31,9 @@ try {
     <?php include 'main-css.php' ?>
     <!-- Select2 CSS -->
     <link href="assets/libs/select2/css/select2.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+     
 </head>
 
 <body data-layout="horizontal" data-topbar="colored">
@@ -75,7 +78,10 @@ try {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+
+                                     
+
+                                        <div class="col-md-3 hidden">
                                             <div class="form-group mb-0">
                                                 <label for="filter_department_id" class="form-label">Filter by Department</label>
                                                 <div class="input-group">
@@ -90,7 +96,67 @@ try {
                                                 </div>
                                             </div>
                                         </div>
+<div class="col-md-3">
+    </div>
+                                           <div class="col-md-3">
+                                            <div class="form-group mb-0">
+                                                <label for="filter_brand_id" class="form-label">Filter by Brand</label>
+                                                <div class="input-group">
+                                                    <select class="form-control select2" id="filter_brand_id" name="filter_brand_id">
+                                                        <option value="all" selected>Show All Brands</option>
+                                                        <?php
+                                                        $BRAND = new Brand();
+                                                        $brands = $BRAND->activeBrands();
+                                                        foreach ($brands as $brand): ?>
+                                                            <option value="<?php echo $brand['id']; ?>">
+                                                                <?php echo htmlspecialchars($brand['name']); ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
+
+
+                                <div class="row g-3 mb-3">
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="mini-card text-center p-3 shadow-sm rounded">
+            <i class="fa-solid fa-boxes-stacked fa-2x mb-2 text-primary"></i>
+            <h6 class="summary-title mb-1">Total Quantity</h6>
+            <p class="total-quantity fs-5 fw-bold">0</p>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="mini-card text-center p-3 shadow-sm rounded">
+            <i class="fa-solid fa-coins fa-2x mb-2 text-success"></i>
+            <h6 class="summary-title mb-1">Total Cost</h6>
+            <p class="total-cost fs-5 fw-bold">Rs. 0.00</p>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="mini-card text-center p-3 shadow-sm rounded">
+            <i class="fa-solid fa-money-bill fa-2x mb-2 text-warning"></i>
+            <h6 class="summary-title mb-1">Total Customer Price</h6>
+            <p class="total-customer-price fs-5 fw-bold">Rs. 0.00</p>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="mini-card text-center p-3 shadow-sm rounded">
+            <i class="fa-solid fa-money-bill fa-2x mb-2 text-danger"></i>
+            <h6 class="summary-title mb-1">Total Dealer Price</h6>
+            <p class="total-dealer-price fs-5 fw-bold">Rs. 0.00</p>
+        </div>
+    </div>
+</div>
+
+
+                                   
+                                   
+
+
 
                                     <div class="table-responsive">
                                         <table class="table table-bordered dt-responsive nowrap" id="stockTable"

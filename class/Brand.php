@@ -101,4 +101,20 @@ class Brand
 
         return $array;
     }
+
+    public static function getBrandName($id)
+    {
+        if (empty($id)) return '';
+        
+        $db = new Database();
+        $id = (int)$id;
+        $query = "SELECT `name` FROM `brands` WHERE `id` = $id LIMIT 1";
+        $result = $db->readQuery($query);
+        
+        if ($result && $row = mysqli_fetch_assoc($result)) {
+            return $row['name'];
+        }
+        
+        return 'Unknown Brand';
+    }
 }

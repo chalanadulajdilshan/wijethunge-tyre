@@ -170,6 +170,101 @@ class StockMaster
 
 
 
+    public static function getStockSummary($department_id = null, $brand_id = null)
+    {
+
+     
+        $db = new Database();
+        
+        // First, get all items that match the brand filter (if any)
+        $brand_filter = '';
+        if ($brand_id && $brand_id !== 'all') {
+            $brand_filter = " AND im.brand = " . (int)$brand_id;
+        }
+        
+        // Get all items that match the brand filter
+        $items_query = "SELECT 
+                        im.id as item_id,
+                        im.customer_price as default_customer_price,
+                        im.dealer_price as default_dealer_price,
+                        im.brand
+                      FROM item_master im
+                      WHERE 1=1 " . $brand_filter;
+        
+        $items_result = $db->readQuery($items_query);
+        
+        $total_quantity = 0;
+        $total_dealer_price = 0;
+        $total_customer_price = 0;
+        $total_cost_price = 0;
+        
+        // Process each item that matches brand filter
+        while ($item = mysqli_fetch_assoc($items_result)) {
+            $item_id = $item['item_id'];
+            
+            // Get stock quantities by department
+            $stock_query = "SELECT 
+                            sm.quantity,
+                            sm.department_id
+                          FROM stock_master sm
+                          WHERE sm.item_id = " . (int)$item_id . " 
+                          AND sm.quantity > 0 
+                          AND sm.is_active = 1";
+            
+            // Add department filter if provided
+            if ($department_id && $department_id !== 'all') {
+                $stock_query .= " AND sm.department_id = " . (int)$department_id;
+            }
+            
+            $stock_result = $db->readQuery($stock_query);
+            
+            // Process each stock entry for this item
+            while ($stock = mysqli_fetch_assoc($stock_result)) {
+                $quantity = (float)$stock['quantity'];
+                $dept_id = $stock['department_id'];
+                
+                // Get the actual cost from stock_item_tmp if available
+                $cost_query = "SELECT 
+                                SUM(qty) as total_qty, 
+                                SUM(qty * cost) as total_cost,
+                                SUM(qty * customer_price) as total_customer,
+                                SUM(qty * dealer_price) as total_dealer
+                              FROM stock_item_tmp 
+                              WHERE item_id = " . (int)$item_id . " 
+                              AND department_id = " . (int)$dept_id . "
+                              AND status = 1";
+                              
+                $cost_result = mysqli_fetch_assoc($db->readQuery($cost_query));
+                
+                if ($cost_result && $cost_result['total_qty'] > 0) {
+                    // Use actual cost from stock_item_tmp if available
+                    $avg_cost = $cost_result['total_cost'] / $cost_result['total_qty'];
+                    $avg_customer_price = $cost_result['total_customer'] / $cost_result['total_qty'];
+                    $avg_dealer_price = $cost_result['total_dealer'] / $cost_result['total_qty'];
+                    
+                    $total_cost_price += $quantity * $avg_cost;
+                    $total_customer_price += $quantity * $avg_customer_price;
+                    $total_dealer_price += $quantity * $avg_dealer_price;
+                } else {
+                    // Fallback to default prices from item_master
+                    $total_cost_price += 0; // No cost data available
+                    $total_customer_price += $quantity * $item['default_customer_price'];
+                    $total_dealer_price += $quantity * $item['default_dealer_price'];
+                }
+                
+                $total_quantity += $quantity;
+            } // End of while ($stock = mysqli_fetch_assoc($stock_result))
+        } // End of while ($item = mysqli_fetch_assoc($items_result))
+        
+      return [
+    'total_quantity' => number_format($total_quantity),
+    'total_dealer_price' => number_format($total_dealer_price, 2),
+    'total_customer_price' => number_format($total_customer_price, 2),
+    'total_cost_price' => number_format($total_cost_price, 2)
+];
+
+    }
+
     public function transferQuantity($item_id, $from_department_id, $to_department_id, $transfer_qty, $remark = '')
     {
 

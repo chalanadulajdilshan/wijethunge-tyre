@@ -22,6 +22,98 @@ jQuery(document).ready(function () {
     return colors[departmentId % colors.length] || "#f8f9fa"; // Default light gray
   }
 
+  // Function to update the DataTable with current filters
+  function updateDataTable() {
+    if ($.fn.DataTable.isDataTable('#stockTable')) {
+      table.ajax.reload();
+    }
+  }
+
+  // Function to load initial data
+  function loadInitialData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const brandId = urlParams.get('filter_brand_id') || 'all';
+    
+    // Set the dropdown value
+    if (brandId !== 'all') {
+        $("#filter_brand_id").val(brandId).trigger('change');
+    } else {
+        // If no brand filter, load all data
+        updateStockSummary('all');
+    }
+  }
+
+  // Update the stock summary function
+  function updateStockSummary(brandId) {
+    // Show loading indicator
+    $('.someBlock').preloader();
+
+    // Make AJAX request to get updated stock summary
+    $.ajax({
+        url: 'ajax/php/get_stock_summary.php',
+        type: 'POST',
+        data: { 
+            brand_id: brandId,
+            department_id: 'all' // Load all departments by default
+        },
+        dataType: 'JSON',
+        success: function(response) {
+            $('.someBlock').preloader('remove');
+
+            if (response.status === 'success') {
+                // Update the stock summary display
+                if (response.data && response.data.summary) {
+                    const summary = response.data.summary;
+                    
+                    // Update the values
+                    $('.total-quantity').text(summary.total_quantity || 0);
+                    $('.total-cost').text('Rs. ' + summary.total_cost_price || '0.00');
+                    $('.total-customer-price').text('Rs. ' + summary.total_customer_price || '0.00');
+                    $('.total-dealer-price').text('Rs. ' + summary.total_dealer_price || '0.00');
+                }
+            } else {
+                showError("Failed to update stock summary");
+            }
+        },
+        error: function() {
+            $('.someBlock').preloader('remove');
+            showError("Error connecting to server");
+        }
+    });
+
+    // Update the DataTable
+    updateDataTable();
+  }
+
+  // Call this when the page loads
+  $(document).ready(function() {
+    // Initialize select2
+    if ($.fn.select2) {
+        $("#filter_brand_id, #filter_department_id").select2({
+            placeholder: "Select...",
+            allowClear: true
+        });
+    }
+    
+    // Set up the change event for the brand filter
+    $("#filter_brand_id").on("change", function() {
+        const brandId = $(this).val();
+        updateStockSummary(brandId);
+        
+        // Update URL
+        const params = new URLSearchParams(window.location.search);
+        if (brandId && brandId !== 'all') {
+            params.set('filter_brand_id', brandId);
+        } else {
+            params.delete('filter_brand_id');
+        }
+        window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
+    });
+    
+    // Load initial data
+    loadInitialData();
+  });
+
   // Initialize DataTable with server-side processing
   var table = $("#stockTable").DataTable({
     processing: true,
@@ -33,8 +125,15 @@ jQuery(document).ready(function () {
         d.filter = true;
         d.status = 1; // Only show active items
         d.stock_only = true; // Only show items with stock tracking enabled
+        d.action = 'get_stock_items'; // Make sure this matches your server-side action
+        
+        // Get filter values
         const depVal = $("#filter_department_id").val();
-        d.department_id = depVal; // Get selected department ("all" becomes 0 on server)
+        const brandVal = $("#filter_brand_id").val();
+        
+        // Set filter parameters
+        d.department_id = depVal === 'all' ? 0 : depVal; // Convert 'all' to 0 for server
+        d.brand_id = brandVal === 'all' ? 0 : brandVal; // Convert 'all' to 0 for server
         d.expand_departments = depVal === "all"; // Expand into per-department rows when All is selected
       },
       beforeSend: function () {
@@ -259,6 +358,9 @@ jQuery(document).ready(function () {
     },
   });
 
+
+
+
   // Make rows appear clickable
   $("#stockTable tbody").css("cursor", "pointer");
 
@@ -319,6 +421,9 @@ jQuery(document).ready(function () {
     html += "</tbody></table></div>";
     return html;
   }
+
+
+
 
   // Toggle details on click of first column
   $("#stockTable tbody").on("click", "td.details-control", function (e) {
@@ -387,10 +492,23 @@ jQuery(document).ready(function () {
     }
   });
 
-  // Department filter change handler
-  $("#filter_department_id").on("change", function () {
-    const depId = $(this).val();
-    table.ajax.reload();
+  // Filter change handlers
+  $(" #filter_brand_id").on("change", function () {
+    updateStockSummary();
+  });
+  
+  // Initialize filters from URL on page load
+  $(document).ready(function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const deptId = urlParams.get('filter_department_id');
+    const brandId = urlParams.get('filter_brand_id');
+    
+    if (deptId) {
+      $("#filter_department_id").val(deptId).trigger('change');
+    }
+    if (brandId) {
+      $("#filter_brand_id").val(brandId).trigger('change');
+    }
   });
 
   // Row click: navigate to sales-invoice with prefilled item and department

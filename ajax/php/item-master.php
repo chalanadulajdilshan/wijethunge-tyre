@@ -804,6 +804,163 @@ function processItemData($item, $rowIndex)
     return $item;
 }
 
+// Handle stock items listing with filters
+if (isset($_POST['action']) && $_POST['action'] === 'get_stock_items') {
+    try {
+        $db = new Database();
+        
+        // Get request parameters
+        $draw = isset($_POST['draw']) ? (int)$_POST['draw'] : 1;
+        $start = isset($_POST['start']) ? (int)$_POST['start'] : 0;
+        $length = isset($_POST['length']) ? (int)$_POST['length'] : 10;
+        $search = isset($_POST['search']['value']) ? trim($db->escapeString($_POST['search']['value'])) : '';
+        $department_id = isset($_POST['department_id']) ? (int)$_POST['department_id'] : 0;
+        $brand_id = isset($_POST['brand_id']) ? (int)$_POST['brand_id'] : 0;
+        $status = isset($_POST['status']) ? (int)$_POST['status'] : 1;
+        $stock_only = isset($_POST['stock_only']) ? (bool)$_POST['stock_only'] : false;
+        $expand_departments = isset($_POST['expand_departments']) ? (bool)$_POST['expand_departments'] : false;
+        
+        // Build the base query
+        $query = "SELECT 
+                    im.id, im.code, im.name, 
+                    b.name as brand_name, 
+                    c.name as category_name,
+                    im.customer_price, 
+                    im.dealer_price,
+                    im.discount,
+                    im.is_active,";
+        
+        if ($expand_departments) {
+            // If expanding departments, we'll handle this differently
+            $query .= " GROUP_CONCAT(CONCAT(d.id, ':', d.name) SEPARATOR '|') as departments,";
+        }
+        
+        $query .= " COALESCE(sm.quantity, 0) as available_qty,
+                   sm.department_id as row_department_id
+                FROM item_master im
+                LEFT JOIN brand b ON im.brand = b.id
+                LEFT JOIN category c ON im.category = c.id";
+        
+        if ($department_id > 0 || $stock_only) {
+            $query .= " LEFT JOIN stock_master sm ON im.id = sm.item_id ";
+            if ($department_id > 0) {
+                $query .= " AND sm.department_id = $department_id ";
+            }
+            $query .= " AND sm.quantity > 0 AND sm.is_active = 1 ";
+        } else {
+            $query .= " LEFT JOIN (SELECT item_id, SUM(quantity) as quantity, department_id 
+                                 FROM stock_master 
+                                 WHERE is_active = 1 
+                                 GROUP BY item_id, department_id) sm ON im.id = sm.item_id";
+        }
+        
+        if ($expand_departments) {
+            $query .= " LEFT JOIN department d ON sm.department_id = d.id ";
+        }
+        
+        $query .= " WHERE im.is_active = $status ";
+        
+        // Apply brand filter
+        if ($brand_id > 0) {
+            $query .= " AND im.brand = $brand_id ";
+        }
+        
+        // Apply search filter
+        if (!empty($search)) {
+            $query .= " AND (im.code LIKE '%$search%' OR im.name LIKE '%$search%' OR b.name LIKE '%$search%' OR c.name LIKE '%$search%')";
+        }
+        
+        // Group by item if not expanding departments
+        if (!$expand_departments) {
+            $query .= " GROUP BY im.id ";
+        }
+        
+        // Get total records count
+        $countQuery = "SELECT COUNT(DISTINCT im.id) as total 
+                      FROM item_master im 
+                      LEFT JOIN brand b ON im.brand = b.id 
+                      WHERE im.is_active = $status ";
+        
+        if ($brand_id > 0) {
+            $countQuery .= " AND im.brand = $brand_id ";
+        }
+        
+        $totalRecords = $db->readQuery($countQuery);
+        $totalRecords = $totalRecords ? (int)mysqli_fetch_assoc($totalRecords)['total'] : 0;
+        
+        // Add pagination
+        $query .= " ORDER BY im.name ASC ";
+        $query .= " LIMIT $start, $length ";
+        
+        // Execute the query
+        $result = $db->readQuery($query);
+        
+        // Prepare response data
+        $data = [];
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $item = [
+                    'DT_RowId' => 'row_' . $row['id'],
+                    'id' => (int)$row['id'],
+                    'code' => $row['code'],
+                    'name' => $row['name'],
+                    'brand' => $row['brand_name'] ?? '',
+                    'category' => $row['category_name'] ?? '',
+                    'list_price' => number_format($row['customer_price'], 2),
+                    'invoice_price' => number_format($row['dealer_price'], 2),
+                    'available_qty' => (int)($row['available_qty'] ?? 0),
+                    'discount' => $row['discount'] ? $row['discount'] . '%' : '0%',
+                    'status' => $row['is_active'] ? 'Active' : 'Inactive',
+                    'status_label' => $row['is_active'] ? 
+                        '<span class="badge bg-success">Active</span>' : 
+                        '<span class="badge bg-danger">Inactive</span>',
+                    'department_stock' => []
+                ];
+                
+                // Handle department-specific data if expanding departments
+                if ($expand_departments && !empty($row['departments'])) {
+                    $depts = explode('|', $row['departments']);
+                    foreach ($depts as $dept) {
+                        list($deptId, $deptName) = explode(':', $dept);
+                        $item['department_stock'][] = [
+                            'department_id' => (int)$deptId,
+                            'department_name' => $deptName,
+                            'quantity' => (int)$row['available_qty']
+                        ];
+                    }
+                } elseif ($row['row_department_id']) {
+                    $item['department_stock'][] = [
+                        'department_id' => (int)$row['row_department_id'],
+                        'quantity' => (int)$row['available_qty']
+                    ];
+                }
+                
+                $data[] = $item;
+            }
+        }
+        
+        // Return JSON response
+        echo json_encode([
+            'draw' => $draw,
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data' => $data
+        ]);
+        exit;
+        
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'draw' => isset($_POST['draw']) ? (int)$_POST['draw'] : 0,
+            'recordsTotal' => 0,
+            'recordsFiltered' => 0,
+            'data' => [],
+            'error' => $e->getMessage()
+        ]);
+        exit;
+    }
+}
+
 // Export stock data for Excel/CSV /PDF using ItemMaster class methods
 if (isset($_POST['action']) && $_POST['action'] === 'export_stock') {
     try {
