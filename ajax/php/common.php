@@ -27,3 +27,19 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_invoice_id_by_type') {
     echo json_encode(['invoice_id' => $invoice_id]);
     exit;
 }
+
+// Get payment type name by ID
+if (isset($_POST['action']) && $_POST['action'] === 'get_payment_type_name') {
+    $id = trim($_POST['id']);
+    $PAYMENT_TYPE = new PaymentType($id);
+    echo json_encode(['name' => $PAYMENT_TYPE->name ?? '']);
+    exit;
+}
+
+// Get marketing executive name by ID
+if (isset($_POST['action']) && $_POST['action'] === 'get_marketing_executive_name') {
+    $id = trim($_POST['id']);
+    $MARKETING_EXECUTIVE = new MarketingExecutive($id);
+    echo json_encode(['name' => $MARKETING_EXECUTIVE->full_name ?? '']);
+    exit;
+}

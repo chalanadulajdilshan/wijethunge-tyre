@@ -619,14 +619,6 @@ jQuery(document).ready(function () {
         // Reset form first to clear any previous values
         $("#form-data")[0].reset();
 
-        // Set payment type radio button
-        $('input[name="payment_type"]').prop("checked", false);
-        $(
-          'input[name="payment_type"][value="' +
-            (response.payment_type || "1") +
-            '"]'
-        ).prop("checked", true);
-
         if (response.is_cancel == 1) {
           $(".cancel-invoice").hide();
         } else {
@@ -637,10 +629,6 @@ jQuery(document).ready(function () {
         $("#invoice_id").val(response.id || "");
         $("#invoice_no").val(response.invoice_no || "");
         $("#invoice_date").val(response.invoice_date || "");
-        $("#invoice_type").val(response.invoice_type || "customer");
-        $("#company_id")
-          .val(response.company_id || "")
-          .trigger("change");
 
         // Set customer information
         $("#customer_id").val(response.customer_id || "");
@@ -649,15 +637,15 @@ jQuery(document).ready(function () {
         $("#customer_address").val(response.customer_address || "");
         $("#customer_mobile").val(response.customer_mobile || "");
         $("#recommended_person").val(response.recommended_person || "");
-        $("#marketing_executive").val(response.marketing_executive || "");
+
+        // Set readonly fields with names instead of IDs
+        fetchPaymentTypeName(response.payment_type);
+        fetchMarketingExecutiveName(response.marketing_executive);
 
         // Set department
         $("#department_id").val(response.department_id || "").trigger("change");
 
         // Set other fields
-        $("#vat_type")
-          .val(response.vat_type || "")
-          .trigger("change");
         $("#subTotal").val(parseFloat(response.sub_total || 0).toFixed(2));
         $("#disTotal").val(parseFloat(response.discount || 0).toFixed(2));
         $("#tax").val(parseFloat(response.tax || 0).toFixed(2));
@@ -752,4 +740,45 @@ jQuery(document).ready(function () {
 // Global function to convert input to uppercase
 function toUpperCaseInput(element) {
   element.value = element.value.toUpperCase();
+}
+
+// Helper functions to fetch names for readonly input fields
+function fetchPaymentTypeName(paymentTypeId) {
+  if (!paymentTypeId) {
+    $("#payment_type").val("");
+    return;
+  }
+
+  $.ajax({
+    url: "ajax/php/common.php",
+    method: "POST",
+    data: { action: "get_payment_type_name", id: paymentTypeId },
+    dataType: "json",
+    success: function (data) {
+      $("#payment_type").val(data.name || "");
+    },
+    error: function () {
+      $("#payment_type").val("");
+    }
+  });
+}
+
+function fetchMarketingExecutiveName(marketingExecutiveId) {
+  if (!marketingExecutiveId) {
+    $("#marketing_executive").val("");
+    return;
+  }
+
+  $.ajax({
+    url: "ajax/php/common.php",
+    method: "POST",
+    data: { action: "get_marketing_executive_name", id: marketingExecutiveId },
+    dataType: "json",
+    success: function (data) {
+      $("#marketing_executive").val(data.name || "");
+    },
+    error: function () {
+      $("#marketing_executive").val("");
+    }
+  });
 }
