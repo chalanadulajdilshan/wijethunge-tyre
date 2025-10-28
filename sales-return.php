@@ -80,6 +80,7 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                         <!--- Hidden Values -->
                         <input type="hidden" id="item_id">
                         <input type="hidden" id="availableQty">
+                        <input type="hidden" id="return_id">
 
                         <!-- end page title -->
 
@@ -134,8 +135,28 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                                         placeholder="Select Sales Return Date">
                                                 </div>
 
+                                                <div class="col-md-2">
+                                                    <label for="InvoiceCode" class="form-label">Invoice No</label>
+                                                    <div class="input-group mb-3">
+                                                        <input id="invoice_no" name="invoice_no" type="text"
+                                                            class="form-control" readonly>
+                                                        <button class="btn btn-info" type="button" data-bs-toggle="modal"
+                                                            data-bs-target="#invoiceModal">
+                                                            <i class="uil uil-search me-1"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <!-- INVOICE ID HIDDEN -->
+                                                <input type="hidden" id="invoice_id" name="invoice_id" />
+                                                <input type="hidden" id="customer_id" name="customer_id" />
 
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
+                                                    <label class="form-label" for="invoice_date">Invoice Date</label>
+                                                    <input id="invoice_date" name="invoice_date" type="text" class="form-control"
+                                                        placeholder="Invoice Date" readonly>
+                                                </div>
+
+                                                <div class="col-md-2">
                                                     <label for="Department" class="form-label">Department</label>
                                                     <div class="input-group mb-3">
                                                         <select id="department_id" name="department_id"
@@ -162,45 +183,11 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-3">
-                                                    <label for="StoRef" class="form-label">Sto. Ref.</label>
-                                                    <div class="input-group mb-3">
-                                                        <input id="sto_ref" name="sto_ref" type="text"
-                                                            class="form-control" placeholder="Sto. Ref." readonly>
-                                                    </div>
-                                                </div>
-
                                                 <div class="col-md-2">
                                                     <label for="payment_type" class="form-label">Payment Type</label>
                                                     <div class="input-group mb-3">
-                                                        <select id="payment_type" name="payment_type"
-                                                            class="form-select">
-                                                            <?php
-                                                            $PAYMENT_TYPE = new PaymentType(NULL);
-                                                            foreach ($PAYMENT_TYPE->getActivePaymentType() as $payment_type) {
-                                                                ?>
-                                                                <option value="<?php echo $payment_type['id'] ?>">
-                                                                    <?php echo $payment_type['name'] ?>
-                                                                </option>
-                                                            <?php } ?>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-2">
-                                                    <label for="VatType" class="form-label">Vat Type</label>
-                                                    <div class="input-group mb-3">
-                                                        <select id="vat_type" name="vat_type" class="form-select">
-
-                                                            <?php
-                                                            $VAT_TYPE = new VatType(NULL);
-                                                            foreach ($VAT_TYPE->all() as $vat_type) {
-                                                                ?>
-                                                                <option value="<?php echo $vat_type['id'] ?>">
-                                                                    <?php echo $vat_type['name'] ?>
-                                                                </option>
-                                                            <?php } ?>
-                                                        </select>
+                                                        <input id="payment_type" name="payment_type" type="text"
+                                                            class="form-control" readonly>
                                                     </div>
                                                 </div>
 
@@ -210,10 +197,6 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                                     <div class="input-group mb-3">
                                                         <input id="customer_code" name="customer_code" type="text"
                                                             placeholder="Customer code" class="form-control" readonly>
-                                                        <button class="btn btn-info" type="button"
-                                                            data-bs-toggle="modal" data-bs-target="#customerModal">
-                                                            <i class="uil uil-search me-1"></i>
-                                                        </button>
                                                     </div>
                                                 </div>
 
@@ -236,58 +219,12 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-2">
-                                                    <label for="InvoiceNo" class="form-label">Invoice No</label>
-                                                    <div class="input-group mb-3">
-                                                        <input id="invoice_no" name="invoice_no" type="text"
-                                                            placeholder="Invoice No" class="form-control" readonly>
-
-                                                        <button class="btn btn-info" type="button"
-                                                            data-bs-toggle="modal" data-bs-target="#invoiceNo">
-                                                            <i class="uil uil-search me-1"></i>
-                                                        </button>
-
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-2">
-                                                    <label class="form-label" for="date">Invoice Date</label>
-                                                    <input id="date" name="date" type="text" class="form-control"
-                                                        placeholder="Invoice Date" readonly>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <label for="Brand" class="form-label">Brand</label>
-                                                    <div class="input-group mb-3">
-                                                        <select id="brand_id" name="brand_id" class="form-select">
-
-
-
-                                                        </select>
-                                                    </div>
-                                                </div>
-
                                                 <div class="col-md-3">
                                                     <label for="MarketingExecutive" class="form-label">Marketing
                                                         Executive</label>
                                                     <div class="input-group mb-3">
-                                                        <select id="marketing_executive" name="marketing_executive"
-                                                            class="form-select">
-
-
-
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-2">
-                                                    <label for="CostCenter" class="form-label">Cost Center</label>
-                                                    <div class="input-group mb-3">
-                                                        <select id="cost_center" name="cost_center" class="form-select">
-
-
-
-                                                        </select>
+                                                        <input id="marketing_executive" name="marketing_executive" type="text"
+                                                            class="form-control" readonly>
                                                     </div>
                                                 </div>
 
@@ -302,13 +239,12 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                                         <thead class="table-light">
                                                             <tr>
                                                                 <th>Code</th>
-                                                                <th>Description</th>
-                                                                <th>Rate</th>
-                                                                <th>Qty</th>
-                                                                <th>Pre. Req. Qty</th>
-                                                                <th>Req. Qty</th>
-                                                                <th>Discount</th>
+                                                                <th>Name</th>
+                                                                <th>Selling Price</th>
+                                                                <th>Invoice Qty</th>
+                                                                <th>Return Qty</th>
                                                                 <th>Sub Total</th>
+                                                                <th>Action</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody id="invoiceItemsBody">
@@ -413,11 +349,35 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
 
         <!-- /////////////////////////// -->
 
-        <script src="ajax/js/sales-invoice.js"></script>
+
+        <script src="ajax/js/common.js"></script>
 
         <!-- include main js  -->
         <?php include 'main-js.php' ?>
 
-    </body>
+        <script src="ajax/js/sales-return.js"></script>
 
+        <!-- Invoice Search Modal -->
+        <div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="invoiceModalLabel">Search Invoice</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="searchInvoiceNo" class="form-label">Invoice No</label>
+                            <input type="text" class="form-control" id="searchInvoiceNo" placeholder="Enter invoice number">
+                        </div>
+                        <button type="button" class="btn btn-primary" id="searchInvoiceBtn">Search</button>
+                        <div id="invoiceSearchResults" class="mt-3">
+                            <!-- Search results will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
 </html>

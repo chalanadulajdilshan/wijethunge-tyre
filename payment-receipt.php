@@ -517,7 +517,8 @@ $payment_receipt_id = $COMPANY_PROFILE_DETAILS->company_code . '/CPR/00/0' . ($l
                         <div class="modal-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <table id="paymentReceiptTable" class="table table-bordered dt-responsive nowrap w-100">
+                                    <table class="datatable table table-bordered dt-responsive nowrap"
+                                style="border-collapse: collapse; border-spacing: 0; width: 100%;">
                                         <thead>
                                             <tr>
                                                 <th>#ID</th>

@@ -60,6 +60,8 @@ include_once(dirname(__FILE__) . '/PurchaseOrderItem.php');
 include_once(dirname(__FILE__) . '/StockMaster.php');
 include_once(dirname(__FILE__) . '/AuditLog.php');
 include_once(dirname(__FILE__) . '/PurchaseReturn.php');
+include_once(dirname(__FILE__) . '/SalesReturn.php');
+include_once(dirname(__FILE__) . '/SalesReturnItem.php');
 include_once(dirname(__FILE__) . '/Dag.php');
 include_once(dirname(__FILE__) . '/DagItem.php');
 include_once(dirname(__FILE__) . '/StockItemTmp.php');
