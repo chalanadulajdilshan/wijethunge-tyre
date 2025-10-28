@@ -334,7 +334,7 @@ if ($id > 0 && empty($receipt)) {
                                         </div>
                                         <!-- Payment Methods Summary Table -->
                                         <div class="table-responsive mt-4">
-                                            <h6 class="mb-3">Payment Methods Summary</h6>
+                                             
                                             <table class="table table-bordered">
                                                 <thead class="table-light">
                                                     <tr>
