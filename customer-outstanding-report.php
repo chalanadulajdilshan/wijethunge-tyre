@@ -97,35 +97,33 @@ include 'auth.php';
 
                                             <!-- Date Filter Section -->
                                             <div class="col-md-8">
-                                                <div class="card border-0 shadow-sm">
-                                                    <div class="card-body p-3">
-                                                        <div class="row g-3 align-items-end">
-                                                            <div class="col-md-5">
-                                                                <label for="fromDate" class="form-label fw-semibold text-muted mb-2">From Date</label>
-                                                                <div class="input-group">
-                                                                    <input type="text" class="form-control" id="fromDate" name="fromDate" placeholder="Select start date">
-                                                                    <span class="input-group-text bg-light"><i class="mdi mdi-calendar text-primary"></i></span>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-5">
-                                                                <label for="toDate" class="form-label fw-semibold text-muted mb-2">To Date</label>
-                                                                <div class="input-group">
-                                                                    <input type="text" class="form-control" id="toDate" name="toDate" placeholder="Select end date">
-                                                                    <span class="input-group-text bg-light"><i class="mdi mdi-calendar text-primary"></i></span>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-2 d-grid">
-                                                                <button type="button" class="btn btn-outline-primary btn-sm mb-2" id="setToday">
-                                                                    <i class="mdi mdi-calendar-today me-1"></i> Today
-                                                                </button>
-                                                                <button id="exportToPdf" class="btn btn-warning btn-sm">
-                                                                    <i class="fas fa-file-pdf me-1"></i> Export PDF
-                                                                </button>
+                                                <div class="card-body p-3">
+                                                    <div class="row g-3 align-items-end">
+                                                        <div class="col-md-5">
+                                                            <label for="fromDate" class="form-label fw-semibold text-muted mb-2">From Date</label>
+                                                            <div class="input-group">
+                                                                <input type="text" class="form-control" id="fromDate" name="fromDate" placeholder="Select start date">
+                                                                <span class="input-group-text bg-light"><i class="mdi mdi-calendar text-primary"></i></span>
                                                             </div>
                                                         </div>
-                                                        <div class="mt-2">
-                                                            <small class="text-muted"><i class="mdi mdi-information-outline me-1"></i> Leave dates empty to show all records</small>
+                                                        <div class="col-md-5">
+                                                            <label for="toDate" class="form-label fw-semibold text-muted mb-2">To Date</label>
+                                                            <div class="input-group">
+                                                                <input type="text" class="form-control" id="toDate" name="toDate" placeholder="Select end date">
+                                                                <span class="input-group-text bg-light"><i class="mdi mdi-calendar text-primary"></i></span>
+                                                            </div>
                                                         </div>
+                                                        <div class="col-md-2 d-grid">
+                                                            <button type="button" class="btn btn-outline-primary btn-sm mb-2" id="setToday">
+                                                                <i class="mdi mdi-calendar-today me-1"></i> Today
+                                                            </button>
+                                                            <button id="exportToPdf" class="btn btn-warning btn-sm">
+                                                                <i class="fas fa-file-pdf me-1"></i> Export PDF
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        <small class="text-muted"><i class="mdi mdi-information-outline me-1"></i> Leave dates empty to show all records</small>
                                                     </div>
                                                 </div>
                                             </div>
