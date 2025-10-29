@@ -15,10 +15,7 @@ include 'auth.php';
     <link href="assets/libs/daterangepicker/daterangepicker.css" rel="stylesheet" type="text/css">
     <link href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" rel="stylesheet">
     <style>
-        #reportTable thead th.outstanding-column,
-        #reportTable tbody td.outstanding-column {
-            background-color: #ffebee !important;
-        }
+        
 
         #totalOutstanding {
             background-color: #eb4034 !important;
