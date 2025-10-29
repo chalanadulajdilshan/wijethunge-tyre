@@ -101,78 +101,140 @@ $(document).ready(function () {
   // -----------------------------------------------------------------
   // 6. RENDER MAIN TABLE
   // -----------------------------------------------------------------
-  function renderReportData(data) {
-    const $tbody = $("#reportTableBody");
-    $tbody.empty();
+function renderReportData(data) {
+  const $tbody = $("#reportTableBody");
+  const paymentType = $("#paymentType").val();
+  const isCash = paymentType === "cash";
+  $tbody.empty();
 
-    if (!data || data.length === 0) {
-      $tbody.html(
-        '<tr><td colspan="5" class="text-center">No records found</td></tr>'
-      );
-      resetTotals();
-      return;
-    }
+  if (!data || data.length === 0) {
+    $tbody.html(
+      '<tr><td colspan="5" class="text-center">No records found</td></tr>'
+    );
+    resetTotals();
+    return;
+  }
 
-    let totInv = 0,
-      totAmt = 0,
-      totPaid = 0,
-      totOut = 0;
+  // Update table header based on payment type
+  const $thead = $("#reportTable thead");
+  const $tfoot = $("#reportTable tfoot");
+  if (isCash) {
+    $thead.html(`
+      <tr>
+        <th>Customer</th>
+        <th class="text-center">Total Invoices</th>
+        <th class="text-end">Total Invoice Amount</th>
+      </tr>
+    `);
+  } else {
+    $thead.html(`
+      <tr>
+        <th>Customer</th>
+        <th class="text-center">Total Invoices</th>
+        <th class="text-end">Invoice Amount</th>
+        <th class="text-end">Paid</th>
+        <th class="text-end">Outstanding</th>
+      </tr>
+    `);
+  }
 
-    const formatNumber = (num) =>
-      parseFloat(num || 0).toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+  let totInv = 0,
+    totAmt = 0,
+    totPaid = 0,
+    totOut = 0;
 
-    data.forEach(function (c) {
-      totInv += parseInt(c.total_invoices || 0);
-      totAmt += parseFloat(c.invoice_amount || 0);
-      totPaid += parseFloat(c.paid_amount || 0);
-      totOut += parseFloat(c.outstanding || 0);
-
-      const row = `
-                        <tr class="customer-row" data-customer-id="${
-                          c.customer_id
-                        }">
-                            <td>
-                                <i class="fas fa-plus expand-icon"></i>
-                                ${c.customer_code || ""} - ${
-        c.customer_name || ""
-      }${c.mobile_number ? " - " + c.mobile_number : ""}
-                            </td>
-                            <td class="text-center">${
-                              c.total_invoices || 0
-                            }</td>
-                            <td class="text-end">${formatNumber(
-                              c.invoice_amount
-                            )}</td>
-                            <td class="text-end">${formatNumber(
-                              c.paid_amount
-                            )}</td>
-                            <td class="text-end outstanding-column">${formatNumber(
-                              c.outstanding
-                            )}</td>
-                        </tr>
-                        <tr class="invoice-detail-row" style="display:none;">
-                            <td colspan="5" class="p-0">
-                                <div class="invoice-detail-container">
-                                    <table class="table table-sm table-bordered mb-0">
-                                        <thead class="table-light"><tr><td colspan="6" class="text-center">Loading invoices...</td></tr></thead>
-                                        <tbody class="invoice-list"></tbody>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>`;
-      $tbody.append(row);
+  const formatNumber = (num) =>
+    parseFloat(num || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     });
 
-    $("#totalInvoices").text(totInv.toLocaleString());
-    $("#totalInvoice").text(formatNumber(totAmt));
-    $("#totalPaid").text(formatNumber(totPaid));
-    $("#totalOutstanding")
-      .text(formatNumber(totOut))
-      .css({ "background-color": "#eb4034", color: "#ffffff" });
+  data.forEach(function (c) {
+    totInv += parseInt(c.total_invoices || 0);
+    totAmt += parseFloat(c.invoice_amount || 0);
+    totPaid += parseFloat(c.paid_amount || 0);
+    totOut += parseFloat(c.outstanding || 0);
+
+    // CASH VIEW → 3 columns only
+    if (isCash) {
+      $tbody.append(`
+        <tr class="customer-row" data-customer-id="${c.customer_id}">
+          <td>
+            <i class="fas fa-plus expand-icon"></i>
+            ${c.customer_code || ""} - ${c.customer_name || ""}
+            ${c.mobile_number ? " - " + c.mobile_number : ""}
+          </td>
+          <td class="text-center">${c.total_invoices || 0}</td>
+          <td class="text-end">${formatNumber(c.invoice_amount)}</td>
+        </tr>
+        <tr class="invoice-detail-row" style="display:none;">
+          <td colspan="3" class="p-0">
+            <div class="invoice-detail-container">
+              <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light"><tr><td colspan="3" class="text-center">Loading invoices...</td></tr></thead>
+                <tbody class="invoice-list"></tbody>
+              </table>
+            </div>
+          </td>
+        </tr>
+      `);
+    } else {
+      // CREDIT / ALL → full 5-column view
+      $tbody.append(`
+        <tr class="customer-row" data-customer-id="${c.customer_id}">
+          <td>
+            <i class="fas fa-plus expand-icon"></i>
+            ${c.customer_code || ""} - ${c.customer_name || ""}
+            ${c.mobile_number ? " - " + c.mobile_number : ""}
+          </td>
+          <td class="text-center">${c.total_invoices || 0}</td>
+          <td class="text-end">${formatNumber(c.invoice_amount)}</td>
+          <td class="text-end">${formatNumber(c.paid_amount)}</td>
+          <td class="text-end outstanding-column">${formatNumber(c.outstanding)}</td>
+        </tr>
+        <tr class="invoice-detail-row" style="display:none;">
+          <td colspan="5" class="p-0">
+            <div class="invoice-detail-container">
+              <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light"><tr><td colspan="6" class="text-center">Loading invoices...</td></tr></thead>
+                <tbody class="invoice-list"></tbody>
+              </table>
+            </div>
+          </td>
+        </tr>
+      `);
+    }
+  });
+
+  // Render footer totals dynamically
+  const $tfootHtml = isCash
+    ? `
+      <tr>
+        <th class="text-end">Total:</th>
+        <th class="text-center">${totInv.toLocaleString()}</th>
+        <th class="text-end">${formatNumber(totAmt)}</th>
+      </tr>
+    `
+    : `
+      <tr>
+        <th class="text-end">Total:</th>
+        <th class="text-center">${totInv.toLocaleString()}</th>
+        <th class="text-end">${formatNumber(totAmt)}</th>
+        <th class="text-end">${formatNumber(totPaid)}</th>
+        <th class="text-end outstanding-column" style="background-color:#eb4034;color:#fff;">
+          ${formatNumber(totOut)}
+        </th>
+      </tr>
+    `;
+
+  if ($tfoot.length === 0) {
+    $("#reportTable").append(`<tfoot>${$tfootHtml}</tfoot>`);
+  } else {
+    $tfoot.html($tfootHtml);
   }
+}
+
+
 
   function resetTotals() {
     $("#totalInvoices").text("0");
