@@ -18,6 +18,7 @@ class ArnMaster
     public $country;
     public $order_by;
     public $purchase_type;
+    public $payment_type;
     public $arn_status;
     public $remark;
     public $invoice_date;
@@ -98,14 +99,14 @@ class ArnMaster
         $query = "INSERT INTO `arn_master` (
             `arn_no`, `lc_tt_no`, `pi_no`, `po_date`, `supplier_id`, `ci_no`, `bl_no`,
             `container_size`, `category`, `brand`, `department`, `po_no`, `country`, `order_by`,
-            `purchase_type`, `arn_status`, `remark`, `invoice_date`, `entry_date`, `delivery_date`,
+            `purchase_type`, `payment_type`, `arn_status`, `remark`, `invoice_date`, `entry_date`, `delivery_date`,
             `credit_note_amount`, `sub_arn_value`, `total_discount`, `total_arn_value`, `paid_amount`,
             `total_received_qty`, `total_order_qty`, `created_at`
         ) VALUES (
             '{$this->arn_no}', '{$this->lc_tt_no}', '{$this->pi_no}', '{$this->po_date}', '{$this->supplier_id}',
             '{$this->ci_no}', '{$this->bl_no}', '{$this->container_size}', '{$this->category}', '{$this->brand}',
             '{$this->department}', '{$this->po_no}', '{$this->country}', '{$this->order_by}', '{$this->purchase_type}',
-            '{$this->arn_status}', '{$this->remark}', '{$this->invoice_date}', '{$this->entry_date}', '{$this->delivery_date}',
+            '{$this->payment_type}', '{$this->arn_status}', '{$this->remark}', '{$this->invoice_date}', '{$this->entry_date}', '{$this->delivery_date}',
             '{$this->credit_note_amount}', '{$this->sub_arn_value}', '{$this->total_discount}', '{$this->total_arn_value}',
             '{$this->paid_amount}', '{$this->total_received_qty}', '{$this->total_order_qty}', NOW()
         )";
@@ -139,6 +140,7 @@ class ArnMaster
             `country` = '{$this->country}',
             `order_by` = '{$this->order_by}',
             `purchase_type` = '{$this->purchase_type}',
+            `payment_type` = '{$this->payment_type}',
             `arn_status` = '{$this->arn_status}',
             `remark` = '{$this->remark}',
             `invoice_date` = '{$this->invoice_date}',

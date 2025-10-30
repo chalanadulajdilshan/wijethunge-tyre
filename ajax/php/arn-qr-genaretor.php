@@ -99,11 +99,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_barcodes_by_arn' && !empt
                  WHERE bd.arn_id = :arn_id
                  ORDER BY bd.id DESC";
         
-        $barcodes = $db->query($query, [':arn_id' => $arnId])->fetchAll(PDO::FETCH_ASSOC);
+        $barcodes = $db->readQuery($query, [':arn_id' => $arnId]);
         
         echo json_encode([
-            'status' => 'success',
-            'data' => $barcodes
+                'status' => 'success',
+                'data' => $barcodes
         ]);
     } catch (Exception $e) {
         echo json_encode([
@@ -124,10 +124,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_next_sequence' && !empty(
         $query = "SELECT COUNT(*) as count FROM barcode_details 
                  WHERE arn_id = :arn_id AND item_id = :item_id";
         
-        $result = $db->query($query, [
+        $result = $db->readQuery($query, [
             ':arn_id' => $arnId,
             ':item_id' => $itemId
-        ])->fetch(PDO::FETCH_ASSOC);
+        ]);
         
         $nextSequence = $result ? (int)$result['count'] + 1 : 1;
         

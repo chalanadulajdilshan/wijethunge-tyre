@@ -329,6 +329,13 @@ jQuery(document).ready(function ($) {
     }
   }
 
+  // Add click handler for invoice row selection
+  $(document).on("click", "#invoiceBody tr", function() {
+    // Remove selected class from all rows and add to clicked row
+    $("#invoiceBody tr").removeClass("selected");
+    $(this).addClass("selected");
+  });
+
   // Event handlers
   $(document).on("change", ".cheque-select", function () {
     const $select = $(this);
@@ -798,21 +805,43 @@ jQuery(document).ready(function ($) {
     // Create payment methods array
     const paymentMethods = [];
 
+    // Get all invoice IDs from the table rows with non-zero payment amounts
+    const invoiceIds = [];
+    $("#invoiceBody tr").each(function() {
+      const $row = $(this);
+      const $chequePay = $row.find(".cheque-pay");
+      const $cashPay = $row.find(".cash-pay");
+      
+      // Check if either payment method has an amount > 0
+      const chequeAmount = parseAmount($chequePay.val()) || 0;
+      const cashAmount = parseAmount($cashPay.val()) || 0;
+      
+      if (chequeAmount > 0 || cashAmount > 0) {
+        const invoiceId = $row.find("input[name='invoice_id[]']").val();
+        if (invoiceId) {
+          invoiceIds.push(invoiceId);
+        }
+      }
+    });
+    
+    // For now, we'll just use the first invoice ID if available
+    const invoiceId = invoiceIds.length > 0 ? invoiceIds[0] : null;
+
     // Add cash payment method if cash amount > 0
     if (cashAmount > 0) {
       paymentMethods.push({
-        payment_type_id: 1, // Assuming 1 = cash
+        payment_type_id: 1, // 1 = cash
         amount: cashAmount,
-        invoice_id: null, // You may want to set this based on your logic
+        invoice_id: invoiceId
       });
     }
 
     // Add cheque payment method if cheque amount > 0
     if (chequeAmount > 0) {
       paymentMethods.push({
-        payment_type_id: 2, // Assuming 2 = cheque
+        payment_type_id: 2, // 2 = cheque
         amount: chequeAmount,
-        invoice_id: null, // You may want to set this based on your logic
+        invoice_id: invoiceId,
         cheq_no: $("#cheque_no").val() || null,
         bank_id: $("#bank_id").val() || null,
         branch_id: $("#branch_id").val() || null,
@@ -833,6 +862,14 @@ jQuery(document).ready(function ($) {
     
     formData.append("create", true);
     formData.append("action", "create");
+
+    // Log form data for debugging
+    const formDataObj = {};
+    for (let [key, value] of formData.entries()) {
+      formDataObj[key] = value;
+    }
+    console.log('Form Data:', formDataObj);
+    alert(JSON.stringify(formDataObj, null, 2));
 
     $.ajax({
       url: "ajax/php/payment-receipt-supplier.php",

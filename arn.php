@@ -341,8 +341,8 @@ $arn_id = $COMPANY_PROFILE_DETAILS->company_code . '/ARN/00/' . ($lastId + 1);
                                                 <div class="input-group mb-3">
                                                     <select id="payment_type" name="payment_type" class="form-select">
                                                         <option value="">Select Payment Type</option>
-                                                        <option value="Cash">Cash </option>
-                                                        <option value="Credit">Credit</option>
+                                                        <option value="1">Cash </option>
+                                                        <option value="2">Credit</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -627,6 +627,7 @@ $arn_id = $COMPANY_PROFILE_DETAILS->company_code . '/ARN/00/' . ($lastId + 1);
                                             data-department="<?= htmlspecialchars($purchase_order['department']); ?>"
                                             data-grand_total="<?= htmlspecialchars($purchase_order['grand_total']); ?>"
                                             data-status="<?= htmlspecialchars($purchase_order['status']); ?>"
+                                            
                                             data-remarks="<?= htmlspecialchars($purchase_order['remarks']); ?>">
                                             <td><?= $key; ?></td>
                                             <td><?= htmlspecialchars($purchase_order['po_number']); ?></td>
@@ -710,6 +711,7 @@ $arn_id = $COMPANY_PROFILE_DETAILS->company_code . '/ARN/00/' . ($lastId + 1);
                                             data-department="<?= htmlspecialchars($arn_master['department'] ?? ''); ?>"
                                             data-grand_total="<?= htmlspecialchars($arn_master['total_arn_value'] ?? 0); ?>"
                                             data-status="<?= htmlspecialchars($arn_master['arn_status'] ?? ''); ?>"
+                                            data-payment_type="<?= htmlspecialchars($arn_master['payment_type'] ?? ''); ?>"
                                             data-total_discount="<?= htmlspecialchars($arn_master['total_discount'] ?? 0); ?>"
                                             data-total_received_qty="<?= htmlspecialchars($arn_master['total_received_qty'] ?? 0); ?>"
                                             data-total_order_qty="<?= htmlspecialchars($arn_master['total_order_qty'] ?? 0); ?>"

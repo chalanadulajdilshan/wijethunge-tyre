@@ -290,6 +290,9 @@ class CustomerMaster
                  SET `outstanding` = GREATEST(0, `outstanding` $operator $amount)
                  WHERE `id` = '{$customerId}'";
 
+        // var_dump($query);
+        // exit();
+
         $result = $db->readQuery($query);
 
         return $result ? true : false;
