@@ -954,6 +954,7 @@ jQuery(document).ready(function () {
             credit_note_amount: $('#credit_note_amount').val(),
             delivery_date: $('#delivery_date').val(),
             purchase_type: $('#purchase_type').val(),
+            payment_type: $('#payment_type').val(),
             country: $('#country').val(),
             arn_status: $('#arn_status').val(),
             pi_no: $('#pi_no').val(),
@@ -967,7 +968,6 @@ jQuery(document).ready(function () {
             total_vat: parseFloat($('#total_vat').val()) || 0,
             total_received_qty: parseFloat($('#total_received_qty').val()) || 0,
             total_order_qty: parseFloat($('#total_order_qty').val()) || 0,
-            payment_type: isCompanyArnAdjust ? '' : $('#payment_type').val(), // No payment type for company ARN adjust
             company_arn_adjust: isCompanyArnAdjust,
             supplier_code: $('#supplier_code').val(), // Include modified supplier code
             supplier_name: $('#supplier_name').val(), // Include modified supplier name
@@ -1069,6 +1069,7 @@ jQuery(document).ready(function () {
             total_order_qty: row.data('total_order_qty'),
             status: row.data('status'),
             remarks: row.data('remarks'),
+            payment_type: row.data('payment_type'),
             is_cancelled: row.data('is_cancelled')
         };
 
@@ -1091,6 +1092,7 @@ jQuery(document).ready(function () {
         $('#total_arn').val(parseFloat(arnData.grand_total).toFixed(2));
         $('#remarks').val(arnData.remarks);
         $('#arn_status').val(arnData.status);
+        $('#payment_type').val(arnData.payment_type);
         $('#total_discount').val(arnData.total_discount);
         $('#total_received_qty').val(arnData.total_received_qty);
         $('#total_order_qty').val(arnData.total_order_qty);
@@ -1278,10 +1280,6 @@ jQuery(document).ready(function () {
     // Show after values are set; the modal's shown.bs.modal handler will reset rows
     $modal.modal("show");
   });
-
-
-
-
 });
 
 

@@ -54,6 +54,7 @@ if (isset($data['create'])) {
     $ARN->country = $data['country'];
     $ARN->order_by = $data['order_by'];
     $ARN->purchase_type = $data['purchase_type'];
+    $ARN->payment_type = $data['payment_type'];
     $ARN->arn_status = $data['arn_status'];
     $ARN->credit_note_amount = $data['credit_note_amount'];
     $ARN->delivery_date = $data['delivery_date'];
