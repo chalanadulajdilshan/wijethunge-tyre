@@ -3,6 +3,14 @@
  * Handles REP selection and report data loading
  */
 
+// Number formatting function with thousand separators and 2 decimal places
+function formatNumber(num) {
+  return parseFloat(num || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
 $(document).ready(function () {
   // Initialize DataTable for REP selection
   if ($.fn.DataTable.isDataTable("#repTable")) {
@@ -53,20 +61,6 @@ $(document).ready(function () {
             '<span class="badge bg-danger">Inactive</span>';
         },
       },
-      {
-        data: null,
-        orderable: false,
-        render: function (data, type, row) {
-          return `<button class="btn btn-sm btn-primary select-rep" 
-                    data-id="${row.id}" 
-                    data-code="${row.code}" 
-                    data-name="${row.full_name}"
-                    data-mobile="${row.mobile_number || ''}"
-                    data-role="${row.role_type || 'marketing_executive'}">
-                    <i class="uil uil-check me-1"></i> Select
-                  </button>`;
-        },
-      },
     ],
     order: [[0, "desc"]],
     pageLength: 10,
@@ -78,32 +72,36 @@ $(document).ready(function () {
     },
   });
 
-  // Handle REP selection from the modal
-  $("#repTable tbody").on("click", ".select-rep", function () {
-    const repId = $(this).data('id');
-    const repCode = $(this).data('code');
-    const repName = $(this).data('name');
-    const repMobile = $(this).data('mobile');
-    const repRole = $(this).data('role');
+  // Handle REP selection from modal by clicking on rows
+  $("#repTable tbody").on("click", "tr", function () {
+    const rowData = repTable.row(this).data();
+    
+    if (rowData) {
+      const repId = rowData.id;
+      const repCode = rowData.code;
+      const repName = rowData.full_name;
+      const repMobile = rowData.mobile_number;
+      const repRole = rowData.role_type || 'marketing_executive';
 
-    $("#rep_id").val(repId);
-    $("#rep_code").val(repCode);
-    
-    // Store role type for later use
-    $("#rep_role").val(repRole);
-    
-    // Update REP info display
-    $("#repName").text(repName);
-    $("#repCodeDisplay").text(repCode);
-    $("#repMobile").text(repMobile || '-');
-    
-    $("#repModal").modal("hide");
-    
-    // Automatically load report after REP selection if dates are available
-    const fromDate = $("#fromDate").val();
-    const toDate = $("#toDate").val();
-    if (fromDate && toDate) {
-      loadReportData();
+      $("#rep_id").val(repId);
+      $("#rep_code").val(repCode);
+      
+      // Store role type for later use
+      $("#rep_role").val(repRole);
+      
+      // Update REP info display
+      $("#repName").text(repName);
+      $("#repCodeDisplay").text(repCode);
+      $("#repMobile").text(repMobile || '-');
+      
+      $("#repModal").modal("hide");
+      
+      // Automatically load report after REP selection if dates are available
+      const fromDate = $("#fromDate").val();
+      const toDate = $("#toDate").val();
+      if (fromDate && toDate) {
+        loadReportData();
+      }
     }
   });
 
@@ -309,15 +307,9 @@ $(document).ready(function () {
       }</td>
                     <td>${item.invoice_date || ""}</td>
                     <td class="${dueDateClass}">${dueDateText}</td>
-                    <td class="text-end">${parseFloat(
-                      item.invoice_amount || 0
-                    ).toFixed(2)}</td>
-                    <td class="text-end">${parseFloat(
-                      item.paid_amount || 0
-                    ).toFixed(2)}</td>
-                    <td class="text-end text-danger outstanding-column">${parseFloat(
-                      item.outstanding || 0
-                    ).toFixed(2)}</td>
+                    <td class="text-end">${formatNumber(item.invoice_amount)}</td>
+                    <td class="text-end">${formatNumber(item.paid_amount)}</td>
+                    <td class="text-end text-danger outstanding-column">${formatNumber(item.outstanding)}</td>
                 </tr>`;
 
       tbody.append(row);
@@ -328,10 +320,10 @@ $(document).ready(function () {
     });
 
     // Update totals
-    $("#totalInvoice").text(totalInvoice.toFixed(2));
-    $("#totalPaid").text(totalPaid.toFixed(2));
+    $("#totalInvoice").text(formatNumber(totalInvoice));
+    $("#totalPaid").text(formatNumber(totalPaid));
     $("#totalOutstanding")
-      .text(totalOutstanding.toFixed(2))
+      .text(formatNumber(totalOutstanding))
       .attr(
         "style",
         "background-color: #eb4034 !important; color: #ffffff !important;"
@@ -563,9 +555,9 @@ $(document).ready(function () {
                   <td>${item.customer_name || "-"} ${item.mobile_number ? ' - ' + item.mobile_number : ''}</td>
                   <td>${item.invoice_date || "-"}</td>
                   <td>${dueDateText}</td>
-                  <td class="text-right">${parseFloat(item.invoice_amount || 0).toFixed(2)}</td>
-                  <td class="text-right">${parseFloat(item.paid_amount || 0).toFixed(2)}</td>
-                  <td class="text-right">${parseFloat(item.outstanding || 0).toFixed(2)}</td>
+                  <td class="text-right">${formatNumber(item.invoice_amount)}</td>
+                  <td class="text-right">${formatNumber(item.paid_amount)}</td>
+                  <td class="text-right">${formatNumber(item.outstanding)}</td>
               </tr>`;
     });
 
@@ -586,15 +578,15 @@ $(document).ready(function () {
               </div>
               <div style="flex: 1; min-width: 200px; margin: 5px 0;">
                   <div style="font-size: 13px; color: #7f8c8d;">Total Invoice Amount</div>
-                  <div style="font-size: 18px; font-weight: 600; color: #2c3e50;">${totalInvoiceAmount.toFixed(2)}</div>
+                  <div style="font-size: 18px; font-weight: 600; color: #2c3e50;">${formatNumber(totalInvoiceAmount)}</div>
               </div>
               <div style="flex: 1; min-width: 200px; margin: 5px 0;">
                   <div style="font-size: 13px; color: #7f8c8d;">Total Paid Amount</div>
-                  <div style="font-size: 18px; font-weight: 600; color: #28a745;">${totalPaidAmount.toFixed(2)}</div>
+                  <div style="font-size: 18px; font-weight: 600; color: #28a745;">${formatNumber(totalPaidAmount)}</div>
               </div>
               <div style="flex: 1; min-width: 200px; margin: 5px 0;">
                   <div style="font-size: 13px; color: #7f8c8d;">Total Outstanding</div>
-                  <div style="font-size: 24px; font-weight: 600; color: #dc3545;">${totalOutstanding.toFixed(2)}</div>
+                  <div style="font-size: 24px; font-weight: 600; color: #dc3545;">${formatNumber(totalOutstanding)}</div>
               </div>
           </div>
       </div>

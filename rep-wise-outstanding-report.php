@@ -72,6 +72,15 @@ include 'auth.php';
             font-size: 14px;
             opacity: 0.9;
         }
+
+        /* Make REP table rows clickable */
+        #repTable tbody tr {
+            cursor: pointer;
+        }
+
+        #repTable tbody tr:hover {
+            background-color: #f8f9fa !important;
+        }
     </style>
 </head>
 
@@ -249,7 +258,6 @@ include 'auth.php';
                                 <th>Mobile</th>
                                 <th>Role</th>
                                 <th>Status</th>
-                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -297,25 +305,6 @@ include 'auth.php';
 
                 $('#toDate').datepicker('setDate', today);
                 $('#fromDate').datepicker('setDate', firstDay);
-            });
-
-            // Handle REP selection from modal
-            $(document).on('click', '.select-rep', function(e) {
-                e.preventDefault();
-                const repId = $(this).data('id');
-                const repCode = $(this).data('code');
-                const repName = $(this).data('name');
-                const repMobile = $(this).data('mobile');
-
-                $('#rep_id').val(repId);
-                $('#rep_code').val(repCode);
-                
-                // Update REP info display
-                $('#repName').text(repName);
-                $('#repCodeDisplay').text(repCode);
-                $('#repMobile').text(repMobile || '-');
-                
-                $('#repModal').modal('hide');
             });
 
             // Reset form
