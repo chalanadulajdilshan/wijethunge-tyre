@@ -133,6 +133,99 @@ class MarketingExecutive
         return $result['id'];
     }
 
+    // Get all sales representatives (active marketing executives)
+    // This method treats marketing executives as sales representatives
+    public function getAllSalesReps()
+    {
+        $query = "SELECT * FROM `marketing_executive` WHERE `is_active` = 1 ORDER BY `full_name` ASC";
+        $db = new Database();
+        $result = $db->readQuery($query);
+
+        $array_res = array();
+        while ($row = mysqli_fetch_array($result)) {
+            array_push($array_res, $row);
+        }
+
+        return $array_res;
+    }
+
+    // Get sales rep by ID (alias for constructor functionality)
+    public function getSalesRepById($id)
+    {
+        $query = "SELECT * FROM `marketing_executive` WHERE `id` = " . (int)$id . " AND `is_active` = 1";
+        $db = new Database();
+        $result = mysqli_fetch_array($db->readQuery($query));
+        
+        if ($result) {
+            return $result;
+        }
+        return null;
+    }
+
+    // Get all marketing executives and sales executives combined
+    // If you have a role_type field in the table, this will help distinguish them
+    public function getAllExecutives()
+    {
+        $query = "SELECT *, 
+                  CASE 
+                    WHEN code LIKE 'ME%' THEN 'Marketing Executive'
+                    WHEN code LIKE 'SE%' THEN 'Sales Executive'
+                    ELSE 'Sales Representative'
+                  END as role_type
+                  FROM `marketing_executive` 
+                  WHERE `is_active` = 1 
+                  ORDER BY `full_name` ASC";
+        $db = new Database();
+        $result = $db->readQuery($query);
+
+        $array_res = array();
+        while ($row = mysqli_fetch_array($result)) {
+            array_push($array_res, $row);
+        }
+
+        return $array_res;
+    }
+
+    // Get executives by role type (if you add a role_type column to the table)
+    public function getExecutivesByRole($roleType = 'all')
+    {
+        if ($roleType === 'all') {
+            return $this->all();
+        }
+        
+        // If you have a role_type column in your database
+        $query = "SELECT * FROM `marketing_executive` 
+                  WHERE `is_active` = 1 
+                  AND `role_type` = '" . $roleType . "' 
+                  ORDER BY `full_name` ASC";
+        $db = new Database();
+        $result = $db->readQuery($query);
+
+        $array_res = array();
+        while ($row = mysqli_fetch_array($result)) {
+            array_push($array_res, $row);
+        }
+
+        return $array_res;
+    }
+
+    // Get active sales representatives with queue ordering
+    public function getActiveSalesReps()
+    {
+        $query = "SELECT * FROM `marketing_executive` 
+                  WHERE `is_active` = 1 
+                  ORDER BY `queue` ASC, `full_name` ASC";
+        $db = new Database();
+        $result = $db->readQuery($query);
+
+        $array_res = array();
+        while ($row = mysqli_fetch_array($result)) {
+            array_push($array_res, $row);
+        }
+
+        return $array_res;
+    }
+
 
 }
 ?>
