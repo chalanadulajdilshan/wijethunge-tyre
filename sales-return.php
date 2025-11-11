@@ -5,10 +5,6 @@ include './auth.php';
 
 //doc id get by session 
 $DOCUMENT_TRACKING = new DocumentTracking($doc_id);
-
-// Get the last purchase return if 
-$lastId = $DOCUMENT_TRACKING->sales_return_id;
-$sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId + 1;
 ?>
 
 <html lang="en">
@@ -62,18 +58,12 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                 </a>
                                 <?php endif; ?>
 
-                                <?php if ($PERMISSIONS['delete_page']): ?>
-                                <a href="#" class="btn btn-danger delete-category">
-                                    <i class="uil uil-trash-alt me-1"></i> Delete
-                                </a>
-                                <?php endif; ?>
-
                             </div>
 
                             <div class="col-md-4 text-md-end text-start mt-3 mt-md-0">
                                 <ol class="breadcrumb m-0 justify-content-md-end">
                                     <li class="breadcrumb-item"><a href="javascript: void(0);">Dashboard</a></li>
-                                    <li class="breadcrumb-item active">GRN </li>
+                                    <li class="breadcrumb-item active">Sales Return </li>
                                 </ol>
                             </div>
                         </div>
@@ -115,14 +105,14 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                             <div class="row">
 
                                                 <div class="col-md-2">
-                                                    <label for="GRN_No" class="form-label">Ref No</label>
+                                                    <label for="return_no" class="form-label">Ref No</label>
                                                     <div class="input-group mb-3">
-                                                        <input id="grn_no" name="grn_no" type="text"
-                                                            placeholder="GRN No" class="form-control"
-                                                            value="<?php echo $sales_return_id ?>" readonly>
+                                                        <input id="return_no" name="return_no" type="text"
+                                                            placeholder="Auto-generated on save" class="form-control"
+                                                            value="" readonly>
 
                                                         <button class="btn btn-info" type="button"
-                                                            data-bs-toggle="modal" data-bs-target="#grn_no">
+                                                            data-bs-toggle="modal" data-bs-target="#salesReturnModal">
                                                             <i class="uil uil-search me-1"></i>
                                                         </button>
 
@@ -130,8 +120,8 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                                 </div>
 
                                                 <div class="col-md-2">
-                                                    <label class="form-label" for="date">Date</label>
-                                                    <input id="date" name="date" type="text" class="form-control"
+                                                    <label class="form-label" for="return_date">Return Date</label>
+                                                    <input id="return_date" name="return_date" type="text" class="form-control date-picker"
                                                         placeholder="Select Sales Return Date">
                                                 </div>
 
@@ -139,9 +129,9 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                                     <label for="InvoiceCode" class="form-label">Invoice No</label>
                                                     <div class="input-group mb-3">
                                                         <input id="invoice_no" name="invoice_no" type="text"
-                                                            class="form-control" readonly>
+                                                            class="form-control" placeholder="Select Invoice" readonly>
                                                         <button class="btn btn-info" type="button" data-bs-toggle="modal"
-                                                            data-bs-target="#invoiceModal">
+                                                            data-bs-target="#invoiceModal" >
                                                             <i class="uil uil-search me-1"></i>
                                                         </button>
                                                     </div>
@@ -230,6 +220,16 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
 
                                                 <hr class="my-4">
 
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="is_damaged" name="is_damaged" value="1">
+                                                            <label class="form-check-label" for="is_damaged">
+                                                                <strong>Damage Items</strong> - Check this if the returned items are damaged and should not be returned to stock
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
                                                 <h5 class="mb-3">Item Details</h5>
 
@@ -249,7 +249,7 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                                         </thead>
                                                         <tbody id="invoiceItemsBody">
                                                             <tr id="noItemRow">
-                                                                <td colspan="8" class="text-center text-muted">No items
+                                                                <td colspan="7" class="text-center text-muted">No items
                                                                     added</td>
                                                             </tr>
                                                         </tbody>
@@ -270,41 +270,6 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
                                                     <div class="col-md-4">
                                                         <div class="  p-2 border rounded bg-light"
                                                             style="max-width: 600px;">
-                                                            <div class="row mb-2">
-                                                                <div class="col-7">
-                                                                    <input type="text"
-                                                                        class="form-control text_purchase3"
-                                                                        value="Sub Total" disabled>
-                                                                </div>
-                                                                <div class="col-5">
-                                                                    <input type="text" class="form-control"
-                                                                        id="subTotal" value="0.00" disabled>
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="row mb-2">
-                                                                <div class="col-7">
-                                                                    <input type="text"
-                                                                        class="form-control text_purchase3"
-                                                                        value="Discount Total:" disabled>
-                                                                </div>
-                                                                <div class="col-5">
-                                                                    <input type="text" class="form-control"
-                                                                        id="disTotal" value="0.00" disabled>
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="row mb-2">
-                                                                <div class="col-7">
-                                                                    <input type="text"
-                                                                        class="form-control text_purchase3"
-                                                                        value="Tax Total:" disabled>
-                                                                </div>
-                                                                <div class="col-5">
-                                                                    <input type="text" class="form-control" id="tax"
-                                                                        value="0.00" disabled>
-                                                                </div>
-                                                            </div>
                                                             <div class="row mb-2">
                                                                 <div class="col-7">
                                                                     <input type="text"
@@ -345,39 +310,15 @@ $sales_return_id = $COMPANY_PROFILE_DETAILS->company_code . '/SR/00/0' . $lastId
 
         <!-- JAVASCRIPT -->
         <script src="assets/libs/jquery/jquery.min.js"></script>
-        <script src="ajax/js/customer-master.js"></script>
 
         <!-- /////////////////////////// -->
 
 
-        <script src="ajax/js/common.js"></script>
 
         <!-- include main js  -->
         <?php include 'main-js.php' ?>
 
         <script src="ajax/js/sales-return.js"></script>
-
-        <!-- Invoice Search Modal -->
-        <div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="invoiceModalLabel">Search Invoice</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="searchInvoiceNo" class="form-label">Invoice No</label>
-                            <input type="text" class="form-control" id="searchInvoiceNo" placeholder="Enter invoice number">
-                        </div>
-                        <button type="button" class="btn btn-primary" id="searchInvoiceBtn">Search</button>
-                        <div id="invoiceSearchResults" class="mt-3">
-                            <!-- Search results will be populated here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
     </body>
 </html>
