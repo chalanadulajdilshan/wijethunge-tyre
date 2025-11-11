@@ -200,7 +200,45 @@ class SalesInvoiceItem
         }
         return $itemName;
     }
-    
+
+    public function getByInvoiceIdWithReturns($invoice_id)
+    {
+        // First get the invoice number
+        $db = new Database();
+        $invoice_query = "SELECT invoice_no FROM sales_invoice WHERE id = '{$invoice_id}' LIMIT 1";
+        $invoice_result = mysqli_fetch_array($db->readQuery($invoice_query));
+        $invoice_no = $invoice_result['invoice_no'];
+
+        $query = "SELECT
+            sii.*,
+            COALESCE(returned_totals.returned_quantity, 0) as returned_quantity,
+            (sii.quantity - COALESCE(returned_totals.returned_quantity, 0)) as available_quantity
+        FROM `sales_invoice_items` sii
+        LEFT JOIN (
+            SELECT 
+                sri.item_id,
+                SUM(sri.quantity) as returned_quantity
+            FROM `sales_return_items` sri
+            INNER JOIN `sales_return` sr ON sri.return_id = sr.id
+            WHERE sr.invoice_no = '{$invoice_no}'
+            GROUP BY sri.item_id
+        ) returned_totals ON sii.item_code = returned_totals.item_id
+        WHERE sii.invoice_id = '{$invoice_id}'
+        GROUP BY sii.id
+        HAVING available_quantity > 0
+        ORDER BY sii.id ASC";
+
+        $result = $db->readQuery($query);
+        $array_res = [];
+
+        if ($result) {
+            while ($row = mysqli_fetch_array($result)) {
+                array_push($array_res, $row);
+            }
+        }
+
+        return $array_res;
+    }
 
 
 

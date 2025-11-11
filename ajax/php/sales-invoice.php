@@ -618,7 +618,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'cancel') {
     
     $result = $SALES_INVOICE->cancel();
 
-    if ($result) {
+    if (is_array($result) && $result['success']) {
         $STOCK_TRANSACTION = new StockTransaction(NULL);
         $SALES_INVOICE_ITEM = new SalesInvoiceItem(NULL);
         $STOCK_ITEM_TMP = new StockItemTmp(NULL);
@@ -703,9 +703,14 @@ if (isset($_POST['action']) && $_POST['action'] == 'cancel') {
             error_log("Sales order $salesOrderId update result: " . ($result ? 'SUCCESS' : 'FAILED'));
         }
 
-        echo json_encode(['status' => 'success', 'message' => 'Invoice cancelled successfully']);
+        echo json_encode(['status' => 'success', 'message' => $result['message']]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to cancel invoice']);
+        // Handle cancellation failure with specific error message
+        $errorMessage = 'Failed to cancel invoice';
+        if (is_array($result) && isset($result['message'])) {
+            $errorMessage = $result['message'];
+        }
+        echo json_encode(['status' => 'error', 'message' => $errorMessage]);
     }
     exit();
 }

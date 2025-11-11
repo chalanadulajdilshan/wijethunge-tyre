@@ -51,10 +51,18 @@ if (isset($_POST['action']) && $_POST['action'] === 'load_profit_report') {
         $totalExpenses = $expense->getTotalExpensesByDateRange($filters['from_date'], $filters['to_date']);
     }
 
+    // Calculate total return value for the same date range
+    $totalReturns = 0;
+    if (!empty($filters['from_date']) && !empty($filters['to_date'])) {
+        $salesReturn = new SalesReturn(NULL);
+        $totalReturns = $salesReturn->getTotalReturnsByDateRange($filters['from_date'], $filters['to_date']);
+    }
+
     // Prepare response with both sales data and expense total
     $response = [
         'sales_data' => $items,
-        'total_expenses' => $totalExpenses
+        'total_expenses' => $totalExpenses,
+        'total_returns' => $totalReturns
     ];
 
     // Output JSON
@@ -150,14 +158,14 @@ if (isset($_POST['action']) && $_POST['action'] === 'update_item_price') {
         }
 
         // Update the price
-        $ITEM->list_price = $new_price;
+        $ITEM->customer_price = $new_price;
 
-        // Recalculate invoice price if needed (based on discount)
+        // Recalculate dealer price if needed (based on discount)
         if ($ITEM->discount > 0) {
             $discount_amount = $new_price * ($ITEM->discount / 100);
-            $ITEM->invoice_price = $new_price - $discount_amount;
+            $ITEM->dealer_price = $new_price - $discount_amount;
         } else {
-            $ITEM->invoice_price = $new_price;
+            $ITEM->dealer_price = $new_price;
         }
 
         // Save the changes

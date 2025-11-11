@@ -6,10 +6,12 @@ class SalesReturn
     public $return_no;
     public $return_date;
     public $invoice_no;
+    public $invoice_id;
     public $customer_id;
     public $total_amount;
     public $return_reason;
     public $remarks;
+    public $is_damaged;
     public $created_by;
     public $created_at;
     public $updated_at;
@@ -26,10 +28,12 @@ class SalesReturn
                 $this->return_no = $result['return_no'];
                 $this->return_date = $result['return_date'];
                 $this->invoice_no = $result['invoice_no'];
+                $this->invoice_id = $result['invoice_id'];
                 $this->customer_id = $result['customer_id'];
                 $this->total_amount = $result['total_amount'];
                 $this->return_reason = $result['return_reason'];
                 $this->remarks = $result['remarks'];
+                $this->is_damaged = $result['is_damaged'];
                 $this->created_by = $result['created_by'];
                 $this->created_at = $result['created_at'];
                 $this->updated_at = $result['updated_at'];
@@ -40,15 +44,19 @@ class SalesReturn
     public function create()
     {
         $query = "INSERT INTO `sales_return` (
-            `return_no`, `return_date`, `invoice_no`, `customer_id`, `total_amount`, `return_reason`, `remarks`, `created_by`, `created_at`, `updated_at`
+            `return_no`, `return_date`, `invoice_no`, `invoice_id`, `customer_id`, `total_amount`, `return_reason`, `remarks`, `is_damaged`, `created_by`, `created_at`, `updated_at`
         ) VALUES (
-            '$this->return_no', '$this->return_date', '$this->invoice_no', '$this->customer_id', '$this->total_amount', '$this->return_reason', '$this->remarks', '$this->created_by', NOW(), NOW()
+            '$this->return_no', '$this->return_date', '$this->invoice_no', '$this->invoice_id', '$this->customer_id', '$this->total_amount', '$this->return_reason', '$this->remarks', '$this->is_damaged', '$this->created_by', NOW(), NOW()
         )";
 
         $db = new Database();
         $result = $db->readQuery($query);
 
         if ($result) {
+            // Update the invoice's is_return flag
+            $invoice = new SalesInvoice($this->invoice_id);
+            $invoice->updateIsReturnFlag();
+            
             return mysqli_insert_id($db->DB_CON);
         } else {
             return false;
@@ -61,10 +69,12 @@ class SalesReturn
             `return_no` = '$this->return_no',
             `return_date` = '$this->return_date',
             `invoice_no` = '$this->invoice_no',
+            `invoice_id` = '$this->invoice_id',
             `customer_id` = '$this->customer_id',
             `total_amount` = '$this->total_amount',
             `return_reason` = '$this->return_reason',
             `remarks` = '$this->remarks',
+            `is_damaged` = '$this->is_damaged',
             `created_by` = '$this->created_by',
             `updated_at` = NOW()
             WHERE `id` = '$this->id'";
@@ -75,9 +85,20 @@ class SalesReturn
 
     public function delete()
     {
+        // Get invoice_id before deleting
+        $invoice_id = $this->invoice_id;
+        
         $query = "DELETE FROM `sales_return` WHERE `id` = '$this->id'";
         $db = new Database();
-        return $db->readQuery($query);
+        $result = $db->readQuery($query);
+        
+        if ($result) {
+            // Update the invoice's is_return flag after deletion
+            $invoice = new SalesInvoice($invoice_id);
+            $invoice->updateIsReturnFlag();
+        }
+        
+        return $result;
     }
 
     public function all()
@@ -125,6 +146,16 @@ class SalesReturn
         $db = new Database();
         $result = mysqli_fetch_array($db->readQuery($query));
         return $result['count'] > 0;
+    }
+
+    public function getTotalReturnsByDateRange($from_date, $to_date)
+    {
+        $query = "SELECT SUM(sri.net_amount) as total_returns FROM `sales_return` sr 
+                  LEFT JOIN `sales_return_items` sri ON sr.id = sri.return_id 
+                  WHERE sr.return_date BETWEEN '$from_date' AND '$to_date'";
+        $db = new Database();
+        $result = mysqli_fetch_array($db->readQuery($query));
+        return (float) ($result['total_returns'] ?? 0);
     }
 }
 
