@@ -161,21 +161,21 @@ $marketing_ex_id = 'ME/0' . ($lastId + 1);
                                             </div>
 
                                             <!-- Target Month -->
-                                            <div class="col-md-3">
+                                            <div class="col-md-3 hidden">
                                                 <label class="form-label" for="target_month">Target Month</label>
                                                 <input id="target_month" name="target_month" type="month"
                                                     class="form-control">
                                             </div>
 
                                             <!-- Target -->
-                                            <div class="col-md-3">
+                                            <div class="col-md-3 hidden">
                                                 <label class="form-label" for="target">Target</label>
                                                 <input id="target" name="target" type="number" class="form-control"
                                                     placeholder="Target Amount">
                                             </div>
 
                                             <!-- Commission -->
-                                            <div class="col-md-3 mb-3">
+                                            <div class="col-md-3 mb-3 hidden">
                                                 <label class="form-label" for="commission">Commission</label>
                                                 <input id="commission" name="commission" type="number"
                                                     class="form-control" placeholder="Commission Amount">
