@@ -359,7 +359,16 @@ jQuery(document).ready(function () {
     const selectedId = $(this).val();
     if (selectedId!=0) {
 
-      // Update the item code and name fields
+      // Get the selected service item name
+      const selectedText = $(this).find("option:selected").text().trim();
+      const baseServiceId = $("#service").val();
+
+      // If no main service is selected, use the service item name as the item name
+      if (!baseServiceId || baseServiceId === "0") {
+        $("#itemName").val(selectedText);
+      }
+
+      // Update the item code and id fields
       $("#itemCode").val("SI/" + selectedId.padStart(4, "0"));
       $("#item_id").val(selectedId);
 
@@ -383,6 +392,12 @@ jQuery(document).ready(function () {
             $("#item_cost_arn").val(data.service_cost).trigger("change"); // Added trigger
             $("#available_qty").val(data.service_qty).trigger("change"); // Added trigger
             $("#serviceSellingPrice").val(data.service_selling_price).trigger("change"); // Added selling price
+            
+            // If only a single service item is selected (no main service),
+            // treat its selling price as the list price as well
+            if (!baseServiceId || baseServiceId === "0") {
+              $("#itemPrice").val(data.service_selling_price).trigger("change");
+            }
             
             // Combine list price + service selling price for final selling price
             combineServicePrices();
@@ -459,10 +474,18 @@ jQuery(document).ready(function () {
       const listPrice = parseFloat($("#itemPrice").val()) || 0;
       const serviceSellingPrice = parseFloat($("#serviceSellingPrice").val()) || 0;
       const discount = parseFloat($("#itemDiscount").val()) || 0;
-      
-      // Calculate combined price before discount
-      const combinedPriceBeforeDiscount = listPrice + serviceSellingPrice;
-      
+      const baseServiceId = $("#service").val();
+
+      let combinedPriceBeforeDiscount;
+
+      if (baseServiceId && baseServiceId !== "0") {
+        // Main service + service item: add both prices
+        combinedPriceBeforeDiscount = listPrice + serviceSellingPrice;
+      } else {
+        // Only a service item is selected: use whichever price is available
+        combinedPriceBeforeDiscount = listPrice || serviceSellingPrice;
+      }
+
       // Apply discount to the combined total (discount is in percentage)
       const discountAmount = (combinedPriceBeforeDiscount * discount) / 100;
       const finalCombinedPrice = combinedPriceBeforeDiscount - discountAmount;
