@@ -473,7 +473,7 @@ jQuery(document).ready(function () {
     if ($("#serviceItemTable").is(":visible")) {
       const listPrice = parseFloat($("#itemPrice").val()) || 0;
       const serviceSellingPrice = parseFloat($("#serviceSellingPrice").val()) || 0;
-      const discount = parseFloat($("#itemDiscount").val()) || 0;
+      const discount = parseFloat($("#itemDiscount").val()) || 0; // discount is amount per unit
       const baseServiceId = $("#service").val();
 
       let combinedPriceBeforeDiscount;
@@ -486,9 +486,8 @@ jQuery(document).ready(function () {
         combinedPriceBeforeDiscount = listPrice || serviceSellingPrice;
       }
 
-      // Apply discount to the combined total (discount is in percentage)
-      const discountAmount = (combinedPriceBeforeDiscount * discount) / 100;
-      const finalCombinedPrice = combinedPriceBeforeDiscount - discountAmount;
+      // Apply discount as a fixed amount per unit
+      const finalCombinedPrice = combinedPriceBeforeDiscount - discount;
       
       // Update the main selling price field with final combined value after discount
       $("#itemSalePrice").val(finalCombinedPrice.toFixed(2));
@@ -757,11 +756,11 @@ jQuery(document).ready(function () {
     let dealer = parseFloat(dealerPrice);
 
     if (!isNaN(customer) && !isNaN(dealer) && customer > 0) {
-      // calculate percentage difference (customer - dealer) / customer * 100
-      let percentage = ((customer - dealer) / customer) * 100;
+      // calculate discount as fixed amount per unit
+      let discountAmount = customer - dealer;
 
-      // show percentage (2 decimals)
-      $("#itemDiscount").val(percentage.toFixed(2));
+      // show amount (2 decimals)
+      $("#itemDiscount").val(discountAmount.toFixed(2));
     } else {
       $("#itemDiscount").val("0.00");
     }
@@ -1924,8 +1923,8 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       // For service invoices, use the sale_price (which includes combined service + service item price with discount)
       total = sale_price * qty;
     } else {
-      // For regular invoices, use the original calculation
-      total = price * qty - price * qty * (discount / 100);
+      // For regular invoices, use discount as amount per unit
+      total = (price - discount) * qty;
     }
     $("#noItemRow").remove();
     $("#noQuotationItemRow").remove();
@@ -2045,7 +2044,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         0;
 
       const itemTotal = price * qty;
-      const itemDiscount = itemTotal * (discount / 100);
+      const itemDiscount = discount * qty; // discount is amount per unit
       const itemTax = 0;
 
       subTotal += itemTotal;
@@ -2120,20 +2119,20 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   function calculatePayment(changedField) {
     const price = parseFloat($("#itemPrice").val()) || 0;
     const qty = parseFloat($("#itemQty").val()) || 0;
-    const discount = parseFloat($("#itemDiscount").val()) || 0;
+    const discount = parseFloat($("#itemDiscount").val()) || 0; // amount per unit
     const salePrice = parseFloat($("#itemSalePrice").val()) || 0;
 
     let finalSalePrice = salePrice;
     let finalDiscount = discount;
 
     if (changedField === "price" || changedField === "discount") {
-      // Recalculate Sale Price
-      finalSalePrice = price - price * (discount / 100);
+      // Recalculate Sale Price using discount as fixed amount per unit
+      finalSalePrice = price - discount;
       $("#itemSalePrice").val(finalSalePrice.toFixed(2));
     } else if (changedField === "salePrice") {
-      // Recalculate Discount
+      // Recalculate Discount as fixed amount per unit
       if (price > 0) {
-        finalDiscount = ((price - salePrice) / price) * 100;
+        finalDiscount = price - salePrice;
         $("#itemDiscount").val(finalDiscount.toFixed(2));
       }
     }
