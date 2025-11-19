@@ -209,7 +209,7 @@ if (isset($_POST['create'])) {
         $customer_price = isset($customer_prices[$key]) ? floatval($customer_prices[$key]) : $price;
         $dealer_price = isset($dealer_prices[$key]) ? floatval($dealer_prices[$key]) : $price;
 
-        $discount_percentage = floatval($item['discount'] ?? 0);
+        $discount_per_unit = floatval($item['discount'] ?? 0); // discount amount per unit
 
         //GET ARN ID BY ARN NO
         $ARN_MASTER = new ArnMaster(NULL);
@@ -245,7 +245,7 @@ if (isset($_POST['create'])) {
         }
 
         $itemTotal = $price * $qty;
-        $discount_amount = $itemTotal * $discount_percentage / 100;
+        $discount_amount = $discount_per_unit * $qty;
         $totalSubTotal += $itemTotal;
         $totalDiscount += $discount_amount;
     }
@@ -329,7 +329,7 @@ if (isset($_POST['create'])) {
 
         foreach ($items as $item) {
 
-            $item_discount_percentage = isset($item['discount']) ? $item['discount'] : 0;
+            $item_discount_per_unit = isset($item['discount']) ? $item['discount'] : 0; // amount per unit
 
             $item_id = $item['item_id'] ?? '';
             $code = $item['code'] ?? '';
@@ -374,7 +374,7 @@ if (isset($_POST['create'])) {
 
                 $price = floatval($item['price'] ?? 0);
                 $selling_price = floatval($item['selling_price'] ?? $price);
-                $item_discount_amount = ($price * $qty_for_total) * $item_discount_percentage / 100;
+                $item_discount_amount = $item_discount_per_unit * $qty_for_total;
 
                 $SALES_ITEM->item_name = ($item['name'] ?? '') . '|ARN:' . $arn_id . '|DEPT:' . $correctDepartmentId;
                 $SALES_ITEM->price = $invoice_type === 'customer' ? ($item['customer_price'] ?? $price) : ($item['dealer_price'] ?? $price);
