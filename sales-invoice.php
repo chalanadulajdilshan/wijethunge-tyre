@@ -336,7 +336,7 @@ include './auth.php';
                                                             <th>Order Qty</th>
                                                             <th>Stock Qty</th>
                                                             <th>Price</th>
-                                                            <th>Discount</th>
+                                                            <th>Discount (%)</th>
                                                             <th>Selling Price</th>
                                                             <th>Action</th>
                                                         </tr>
@@ -414,9 +414,9 @@ include './auth.php';
                                                         placeholder="Qty" oninput="calculatePayment()">
                                                 </div>
                                                 <div class="col-md-1">
-                                                    <label class="form-label">Dis</label>
+                                                    <label class="form-label">Dis (%)</label>
                                                     <input type="number" id="itemDiscount" class="form-control"
-                                                        placeholder="Dis Amount" oninput="calculatePayment()">
+                                                        placeholder="Dis %" oninput="calculatePayment()">
                                                 </div>
                                                 <div class="col-md-2">
                                                     <label class="form-label">Selling Price</label>
