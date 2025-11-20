@@ -244,7 +244,9 @@ if (isset($_POST['create'])) {
             }
         }
 
-        $itemTotal = $price * $qty;
+        // Use correct quantity based on item type
+        $qty_for_calculation = (substr($code, 0, 2) === 'SI') ? floatval($item['service_qty'] ?? 0) : $qty;
+        $itemTotal = $price * $qty_for_calculation;
         $discount_amount = $itemTotal * $discount_percentage / 100;
         $totalSubTotal += $itemTotal;
         $totalDiscount += $discount_amount;
@@ -358,18 +360,28 @@ if (isset($_POST['create'])) {
 
                 $SALES_ITEM->invoice_id = $invoiceTableId;
 
-                if (substr($code, 0, 2) !== 'SI') {
+                // Check if this is service id = 1 (skip saving main service, only save service items)
+                if (substr($code, 0, 2) === 'SV' && $item_id == '1') {
+                    // Service id = 1: Skip this record, only service items will be saved
+                    continue;
+                } elseif (substr($code, 0, 2) === 'SI') {
+                    // Service item - use service_qty for all calculations
+                    $SALES_ITEM->service_item_code = $item_id;
+                    $SALES_ITEM->quantity = $item['service_qty'] ?? 0; // Use actual service_qty
+                    $qty_for_total = $item['service_qty'] ?? 0; // Use service_qty for price calculations
+                    $qty_for_stock = $item['service_qty'] ?? 0; // Use service_qty for stock management
+                } elseif (substr($code, 0, 2) === 'SV') {
+                    // Regular service (not id=1) - use actual quantity entered
+                    $SALES_ITEM->item_code = $item_id;
+                    $SALES_ITEM->quantity = $item['qty'] ?? 0;
+                    $qty_for_total = $item['qty'] ?? 0;
+                    $qty_for_stock = 0; // Services don't affect stock
+                } else {
                     // Regular item
                     $SALES_ITEM->item_code = $item_id;
                     $SALES_ITEM->quantity = $item['qty'] ?? 0;
                     $qty_for_total = $item['qty'] ?? 0;
                     $qty_for_stock = $item['qty'] ?? 0; // Use regular qty for stock management
-                } else {
-                    // Service item - main qty should always be 1, but use service_qty for calculations
-                    $SALES_ITEM->service_item_code = $item_id;
-                    $SALES_ITEM->quantity = 1; // Always 1 for service items in the invoice table
-                    $qty_for_total = $item['service_qty'] ?? 0; // Use service_qty for price calculations
-                    $qty_for_stock = $item['service_qty'] ?? 0; // Use service_qty for stock management
                 }
 
                 $price = floatval($item['price'] ?? 0);
