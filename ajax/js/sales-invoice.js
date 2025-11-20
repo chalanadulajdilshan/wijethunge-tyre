@@ -428,7 +428,7 @@ jQuery(document).ready(function () {
     $("#available_qty").val(9999); // Unlimited for pure services
 
     // Show service extra details (Vehicle No & Current KM)
-    if (selectedId && selectedId != "0") {
+    if (selectedId && selectedId != "0" && selectedId != "1") {
       $("#serviceExtraDetails").slideDown();
       $("#serviceKmDetails").slideDown();
       $("#serviceNextServiceDetails").slideDown();
@@ -473,7 +473,7 @@ jQuery(document).ready(function () {
     if ($("#serviceItemTable").is(":visible")) {
       const listPrice = parseFloat($("#itemPrice").val()) || 0;
       const serviceSellingPrice = parseFloat($("#serviceSellingPrice").val()) || 0;
-      const discount = parseFloat($("#itemDiscount").val()) || 0; // discount is amount per unit
+      const discount = parseFloat($("#itemDiscount").val()) || 0;
       const baseServiceId = $("#service").val();
 
       let combinedPriceBeforeDiscount;
@@ -486,8 +486,9 @@ jQuery(document).ready(function () {
         combinedPriceBeforeDiscount = listPrice || serviceSellingPrice;
       }
 
-      // Apply discount as a fixed amount per unit
-      const finalCombinedPrice = combinedPriceBeforeDiscount - discount;
+      // Apply discount to the combined total (discount is in percentage)
+      const discountAmount = (combinedPriceBeforeDiscount * discount) / 100;
+      const finalCombinedPrice = combinedPriceBeforeDiscount - discountAmount;
       
       // Update the main selling price field with final combined value after discount
       $("#itemSalePrice").val(finalCombinedPrice.toFixed(2));
@@ -756,11 +757,11 @@ jQuery(document).ready(function () {
     let dealer = parseFloat(dealerPrice);
 
     if (!isNaN(customer) && !isNaN(dealer) && customer > 0) {
-      // calculate discount as fixed amount per unit
-      let discountAmount = customer - dealer;
+      // calculate percentage difference (customer - dealer) / customer * 100
+      let percentage = ((customer - dealer) / customer) * 100;
 
-      // show amount (2 decimals)
-      $("#itemDiscount").val(discountAmount.toFixed(2));
+      // show percentage (2 decimals)
+      $("#itemDiscount").val(percentage.toFixed(2));
     } else {
       $("#itemDiscount").val("0.00");
     }
@@ -1834,10 +1835,27 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     const currentKm = $("#currentKm").val().trim() || "";
     const nextServiceDays = $("#nextServiceDays").val().trim() || "";
 
-    if (!code || !name || price <= 0 || qty <= 0) {
+    // Check if service id is 1 (allow zero price but qty is required)
+    const serviceId = $("#service").val();
+    const isServiceOne = serviceId === "1";
+
+    // Quantity is always required
+    if (!code || !name || qty <= 0) {
       swal({
         title: "Error!",
-        text: "Please enter valid item details including quantity and price.",
+        text: "Please enter valid item details including quantity.",
+        type: "error",
+        timer: 3000,
+        showConfirmButton: false,
+      });
+      return;
+    }
+    
+    // Price validation: only skip for service id = 1
+    if (!isServiceOne && price <= 0) {
+      swal({
+        title: "Error!",
+        text: "Please enter a valid price.",
         type: "error",
         timer: 3000,
         showConfirmButton: false,
@@ -1923,8 +1941,8 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       // For service invoices, use the sale_price (which includes combined service + service item price with discount)
       total = sale_price * qty;
     } else {
-      // For regular invoices, use discount as amount per unit
-      total = (price - discount) * qty;
+      // For regular invoices, use the original calculation
+      total = price * qty - price * qty * (discount / 100);
     }
     $("#noItemRow").remove();
     $("#noQuotationItemRow").remove();
@@ -1988,9 +2006,10 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     // Clear input fields
     updateFinalTotal();
     $(
-      "#itemCode, #itemName, #itemPrice,#item_cost_arn, #itemQty, #itemDiscount, #item_id, #itemSalePrice"
+      "#itemCode, #itemName, #itemPrice,#item_cost_arn, #itemQty, #itemDiscount, #item_id, #itemSalePrice, #serviceQty"
     ).val("");
     $("#vehicleNo, #currentKm, #nextServiceDays").val("");
+    $("#service").val("0"); // Reset service dropdown to default
     $("#serviceItemTable").hide();
     $("#serviceExtraDetails").hide();
     $("#serviceKmDetails").hide();
@@ -2044,7 +2063,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         0;
 
       const itemTotal = price * qty;
-      const itemDiscount = discount * qty; // discount is amount per unit
+      const itemDiscount = itemTotal * (discount / 100);
       const itemTax = 0;
 
       subTotal += itemTotal;
@@ -2119,20 +2138,20 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   function calculatePayment(changedField) {
     const price = parseFloat($("#itemPrice").val()) || 0;
     const qty = parseFloat($("#itemQty").val()) || 0;
-    const discount = parseFloat($("#itemDiscount").val()) || 0; // amount per unit
+    const discount = parseFloat($("#itemDiscount").val()) || 0;
     const salePrice = parseFloat($("#itemSalePrice").val()) || 0;
 
     let finalSalePrice = salePrice;
     let finalDiscount = discount;
 
     if (changedField === "price" || changedField === "discount") {
-      // Recalculate Sale Price using discount as fixed amount per unit
-      finalSalePrice = price - discount;
+      // Recalculate Sale Price
+      finalSalePrice = price - price * (discount / 100);
       $("#itemSalePrice").val(finalSalePrice.toFixed(2));
     } else if (changedField === "salePrice") {
-      // Recalculate Discount as fixed amount per unit
+      // Recalculate Discount
       if (price > 0) {
-        finalDiscount = price - salePrice;
+        finalDiscount = ((price - salePrice) / price) * 100;
         $("#itemDiscount").val(finalDiscount.toFixed(2));
       }
     }
