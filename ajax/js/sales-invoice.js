@@ -1835,15 +1835,15 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     const currentKm = $("#currentKm").val().trim() || "";
     const nextServiceDays = $("#nextServiceDays").val().trim() || "";
 
-    // Check if service id is 1 (allow zero price but qty is required)
+    // Check if service id is 1 (allow zero price and zero qty)
     const serviceId = $("#service").val();
     const isServiceOne = serviceId === "1";
 
-    // Quantity is always required
-    if (!code || !name || qty <= 0) {
+    // Basic validation for code and name
+    if (!code || !name) {
       swal({
         title: "Error!",
-        text: "Please enter valid item details including quantity.",
+        text: "Please enter valid item details.",
         type: "error",
         timer: 3000,
         showConfirmButton: false,
@@ -1851,7 +1851,19 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       return;
     }
     
-    // Price validation: only skip for service id = 1
+    // Quantity validation: skip for service id = 1
+    if (!isServiceOne && qty <= 0) {
+      swal({
+        title: "Error!",
+        text: "Please enter a valid quantity.",
+        type: "error",
+        timer: 3000,
+        showConfirmButton: false,
+      });
+      return;
+    }
+    
+    // Price validation: skip for service id = 1
     if (!isServiceOne && price <= 0) {
       swal({
         title: "Error!",
@@ -1935,60 +1947,115 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       return;
     }
 
-    // Calculate total based on whether it's a service invoice or regular invoice
-    let total;
-    if ($("#serviceItemTable").is(":visible")) {
-      // For service invoices, use the sale_price (which includes combined service + service item price with discount)
-      total = sale_price * qty;
-    } else {
-      // For regular invoices, use the original calculation
-      total = price * qty - price * qty * (discount / 100);
-    }
     $("#noItemRow").remove();
     $("#noQuotationItemRow").remove();
     $("#noInvoiceItemRow").remove();
 
-    // Calculate display values based on invoice type
-    let displayPrice, displayName, customerPrice, dealerPrice, selectedPrice;
+    // Check if both service and service item are selected (service item table is visible)
     if ($("#serviceItemTable").is(":visible")) {
-      // For service invoices, show combined service + service item details
-      const serviceSellingPrice = parseFloat($("#serviceSellingPrice").val()) || 0;
-      const combinedPriceBeforeDiscount = price + serviceSellingPrice;
-      displayPrice = combinedPriceBeforeDiscount;
-      displayName = name + " (Service + Item)";
-      customerPrice = combinedPriceBeforeDiscount; // For services, same price
-      dealerPrice = combinedPriceBeforeDiscount;
-      selectedPrice = combinedPriceBeforeDiscount;
-    } else {
-      // For regular invoices, get prices from the modal data
-      // We need to get the prices from the clicked row
-      const invoiceType = $("#invoice_type").val();
-      customerPrice = price; // itemPrice is set based on type
-      dealerPrice = sale_price;
-      selectedPrice = price; // Show selected price
-      displayPrice = price; // Show selected price
-      displayName = name;
-    }
-
-    // Get the cost value from the form
-    const cost = parseFloat($("#item_cost_arn").val()) || 0;
-    
-    const row = `
+      // Add TWO separate rows: one for service, one for service item
+      
+      // Get service details
+      const serviceId = $("#service").val();
+      const serviceName = $("#service option:selected").text().trim();
+      const serviceCode = "SV/" + serviceId.padStart(4, "0");
+      const servicePrice = price; // Main service price
+      const serviceQtyVal = 1; // Service quantity is always 1
+      const serviceTotal = servicePrice * serviceQtyVal - (servicePrice * serviceQtyVal * (discount / 100));
+      
+      // Add service row (only if service ID is not 1)
+      if (serviceId !== "1") {
+        const serviceRow = `
             <tr>
-                <td>${code}
-                    <input type="hidden" name="item_id[]" value="${item_id}">
-                    <input type="hidden" name="item_codes[]" value="${code}">
-                    <input type="hidden" name="customer_prices[]" value="${customerPrice}">
-                    <input type="hidden" name="dealer_prices[]" value="${dealerPrice}">
-                    <input type="hidden" name="arn_ids[]" value="${arnId}">
-                    <input type="hidden" name="arn_costs[]" value="${cost}">
-                    <input type="hidden" name="service_qty[]" value="${serviceQty}">
+                <td>${serviceCode}
+                    <input type="hidden" name="item_id[]" value="${serviceId}">
+                    <input type="hidden" name="item_codes[]" value="${serviceCode}">
+                    <input type="hidden" name="customer_prices[]" value="${servicePrice}">
+                    <input type="hidden" name="dealer_prices[]" value="${servicePrice}">
+                    <input type="hidden" name="arn_ids[]" value="${serviceCode}">
+                    <input type="hidden" name="arn_costs[]" value="0">
+                    <input type="hidden" name="service_qty[]" value="0">
                     <input type="hidden" name="vehicle_no[]" value="${vehicleNo}">
                     <input type="hidden" name="current_km[]" value="${currentKm}">
                     <input type="hidden" name="next_service_days[]" value="${nextServiceDays}">
                 </td>
-                <td>${displayName}</td>
-                <td class="item-price">${selectedPrice.toFixed(2)}</td>
+                <td>${serviceName}</td>
+                <td class="item-price">${servicePrice.toFixed(2)}</td>
+                <td class="item-qty">${serviceQtyVal}</td>
+                <td class="item-discount">${discount}</td>
+                <td>${serviceTotal.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger btn-remove-item" data-code="${serviceCode}" data-qty="${serviceQtyVal}" data-arn-id="${serviceCode}">Remove</button>
+                </td>
+            </tr>
+        `;
+        $("#invoiceItemsBody").append(serviceRow);
+      }
+      
+      // Get service item details
+      const serviceItemPrice = parseFloat($("#serviceSellingPrice").val()) || 0;
+      const serviceItemUnitPrice = serviceQty > 0 ? serviceItemPrice / serviceQty : 0;
+      const serviceItemTotal = serviceItemPrice - (serviceItemPrice * (discount / 100));
+      const serviceItemCost = parseFloat($("#item_cost_arn").val()) || 0;
+      const serviceItemName = $("#service_items option:selected").text().trim();
+      const combinedServiceItemName = serviceName
+        ? serviceName + " - " + serviceItemName
+        : serviceItemName;
+      
+      // Add service item row
+      const serviceItemRow = `
+            <tr>
+                <td>${code}
+                    <input type="hidden" name="item_id[]" value="${item_id}">
+                    <input type="hidden" name="item_codes[]" value="${code}">
+                    <input type="hidden" name="customer_prices[]" value="${serviceItemUnitPrice}">
+                    <input type="hidden" name="dealer_prices[]" value="${serviceItemUnitPrice}">
+                    <input type="hidden" name="arn_ids[]" value="${arnId}">
+                    <input type="hidden" name="arn_costs[]" value="${serviceItemCost}">
+                    <input type="hidden" name="service_qty[]" value="${serviceQty}">
+                    <input type="hidden" name="vehicle_no[]" value="">
+                    <input type="hidden" name="current_km[]" value="">
+                    <input type="hidden" name="next_service_days[]" value="">
+                </td>
+                <td>${combinedServiceItemName}</td>
+                <td class="item-price">${serviceItemUnitPrice.toFixed(2)}</td>
+                <td class="item-qty">${serviceQty}</td>
+                <td class="item-discount">${discount}</td>
+                <td>${serviceItemTotal.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger btn-remove-item" data-code="${code}" data-qty="${serviceQty}" data-arn-id="${arnId}">Remove</button>
+                </td>
+            </tr>
+        `;
+      $("#invoiceItemsBody").append(serviceItemRow);
+      
+    } else {
+      // Regular item or standalone service/service item - add single row
+      const total = price * qty - price * qty * (discount / 100);
+      const cost = parseFloat($("#item_cost_arn").val()) || 0;
+      
+      const row = `
+            <tr>
+                <td>${code}
+                    <input type="hidden" name="item_id[]" value="${item_id}">
+                    <input type="hidden" name="item_codes[]" value="${code}">
+                    <input type="hidden" name="customer_prices[]" value="${price}">
+                    <input type="hidden" name="dealer_prices[]" value="${sale_price}">
+                    <input type="hidden" name="arn_ids[]" value="${arnId}">
+                    <input type="hidden" name="arn_costs[]" value="${cost}">
+                    <input type="hidden" name="service_qty[]" value="0">
+                    <input type="hidden" name="vehicle_no[]" value="${vehicleNo}">
+                    <input type="hidden" name="current_km[]" value="${currentKm}">
+                    <input type="hidden" name="next_service_days[]" value="${nextServiceDays}">
+                </td>
+                <td>${name}</td>
+                <td class="item-price">${price.toFixed(2)}</td>
                 <td class="item-qty">${qty}</td>
                 <td class="item-discount">${discount}</td>
                 <td>${total.toLocaleString(undefined, {
@@ -2000,8 +2067,8 @@ if ($("input[name='payment_type']:checked").val() === "2") {
                 </td>
             </tr>
         `;
-
-    $("#invoiceItemsBody").append(row);
+      $("#invoiceItemsBody").append(row);
+    }
 
     // Clear input fields
     updateFinalTotal();
@@ -2054,14 +2121,12 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     let taxTotal = 0;
 
     $("#invoiceItemsBody tr").each(function () {
-      const qty =
-        parseFloat($(this).find(".item-qty").text().replace(/,/g, "")) || 0;
-      const price =
-        parseFloat($(this).find(".item-price").text().replace(/,/g, "")) || 0;
-      const discount =
-        parseFloat($(this).find(".item-discount").text().replace(/,/g, "")) ||
-        0;
+      // Read price and quantity from the table
+      const price = parseFloat($(this).find(".item-price").text().replace(/,/g, "")) || 0;
+      const qty = parseFloat($(this).find(".item-qty").text().replace(/,/g, "")) || 0;
+      const discount = parseFloat($(this).find(".item-discount").text().replace(/,/g, "")) || 0;
 
+      // Calculate totals
       const itemTotal = price * qty;
       const itemDiscount = itemTotal * (discount / 100);
       const itemTax = 0;
