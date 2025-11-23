@@ -153,7 +153,8 @@ jQuery(document).ready(function () {
                         // Close modal
                         $('#customerAddModal').modal('hide');
 
-                        $('#customer_code').val(result.customer_id);
+                        $('#customer_code').val(result.customer_code);
+                        $('#customer_id').val(result.customer_id);
                         $('#customer_name').val(result.customer_name);
                         $('#customer_name_2').val(result.customer_name_2 || '');
                         $('#customer_address').val(result.customer_address);
