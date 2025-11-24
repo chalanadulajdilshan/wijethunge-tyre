@@ -2,7 +2,7 @@ jQuery(document).ready(function () {
   //WINDOWS LOADER
   loadCustomer();
   getInvoiceData();
-  
+
   // Check if current invoice is partially paid and disable cancel button if needed
   checkInvoicePaymentStatus();
 
@@ -51,7 +51,8 @@ jQuery(document).ready(function () {
         const dealerPrice = parseFloat(activeArn.data("dealer-price"));
 
         const invoiceType = $(this).val();
-        const selectedPrice = invoiceType === "customer" ? customerPrice : dealerPrice;
+        const selectedPrice =
+          invoiceType === "customer" ? customerPrice : dealerPrice;
 
         $("#itemPrice").val(parseFloat(selectedPrice).toFixed(2));
         calculatePayment("price");
@@ -59,7 +60,10 @@ jQuery(document).ready(function () {
     }
 
     // Update sales rep orders table if it's visible
-    if ($("#salesRepOrdersTable").is(":visible") && currentSalesOrdersData.length > 0) {
+    if (
+      $("#salesRepOrdersTable").is(":visible") &&
+      currentSalesOrdersData.length > 0
+    ) {
       populateSalesRepOrdersTable(currentSalesOrdersData);
     }
   });
@@ -149,7 +153,7 @@ jQuery(document).ready(function () {
   function loadItems(page = 1) {
     // Hide any previous table (if needed)
     $("#serviceItemTable").hide();
-  
+
     // Show a loading row in the table body
     $("#itemMaster tbody").html(`
       <tr>
@@ -159,17 +163,17 @@ jQuery(document).ready(function () {
         </td>
       </tr>
     `);
-  
+
     // Clear old pagination
     $("#itemPagination").empty();
-  
+
     // Collect filters
     let brand_id = $("#item_brand_id").val();
     let category_id = $("#item_category_id").val();
     let group_id = $("#item_group_id").val();
     let department_id = $("#item_department_id").val();
     let item_code = $("#item_item_code").val().trim();
-  
+
     // Perform AJAX
     $.ajax({
       url: "ajax/php/report.php",
@@ -185,7 +189,7 @@ jQuery(document).ready(function () {
       },
       success: function (data) {
         fullItemList = data || [];
-  
+
         if (fullItemList.length === 0) {
           $("#itemMaster tbody").html(`
             <tr>
@@ -209,9 +213,6 @@ jQuery(document).ready(function () {
       },
     });
   }
-  
-
- 
 
   //append to model to data in this funtion
   function renderPaginatedItems(page = 1) {
@@ -291,7 +292,8 @@ jQuery(document).ready(function () {
           }
 
           const invoiceType = $("#invoice_type").val();
-          const selectedPrice = invoiceType === "customer" ? row.customer_price : row.dealer_price;
+          const selectedPrice =
+            invoiceType === "customer" ? row.customer_price : row.dealer_price;
 
           tbody += `
                     <tr class="table-info arn-row ${rowClass}" 
@@ -324,7 +326,9 @@ jQuery(document).ready(function () {
                     
                         <td style="width: 15%;">
                             <div><strong>Price:</strong></div>
-                            <div class='text-danger'><b>${Number(selectedPrice).toLocaleString("en-US", {
+                            <div class='text-danger'><b>${Number(
+                              selectedPrice
+                            ).toLocaleString("en-US", {
                               minimumFractionDigits: 2,
                             })}</b></div>
                         </td>
@@ -341,8 +345,6 @@ jQuery(document).ready(function () {
     renderPaginationControls(page);
   }
 
-
-
   function addServiceItem() {
     $(
       "#itemCode, #itemName, #itemPrice,#item_cost_arn, #itemQty, #itemDiscount, #item_id, #itemSalePrice"
@@ -357,8 +359,7 @@ jQuery(document).ready(function () {
   // Handle service item selection from dropdown
   $(document).on("change", "#service_items", function () {
     const selectedId = $(this).val();
-    if (selectedId!=0) {
-
+    if (selectedId != 0) {
       // Get the selected service item name
       const selectedText = $(this).find("option:selected").text().trim();
       const baseServiceId = $("#service").val();
@@ -384,21 +385,24 @@ jQuery(document).ready(function () {
           console.log("AJAX Response:", data);
           if (data.status === "success") {
             console.log("Found service cost:", data.service_cost);
-            
+
             // Store unit prices for calculations
             unitServiceCost = parseFloat(data.service_cost) || 0;
-            unitServiceSellingPrice = parseFloat(data.service_selling_price) || 0;
-            
+            unitServiceSellingPrice =
+              parseFloat(data.service_selling_price) || 0;
+
             $("#item_cost_arn").val(data.service_cost).trigger("change"); // Added trigger
             $("#available_qty").val(data.service_qty).trigger("change"); // Added trigger
-            $("#serviceSellingPrice").val(data.service_selling_price).trigger("change"); // Added selling price
-            
+            $("#serviceSellingPrice")
+              .val(data.service_selling_price)
+              .trigger("change"); // Added selling price
+
             // If only a single service item is selected (no main service),
             // treat its selling price as the list price as well
             if (!baseServiceId || baseServiceId === "0") {
               $("#itemPrice").val(data.service_selling_price).trigger("change");
             }
-            
+
             // Combine list price + service selling price for final selling price
             combineServicePrices();
           } else {
@@ -451,7 +455,7 @@ jQuery(document).ready(function () {
         if (data.status === "success") {
           $("#itemPrice").val(data.service_price);
           $("#itemSalePrice").val(data.service_price);
-          
+
           // Trigger combination if service selling price is already set
           combineServicePrices();
         } else {
@@ -472,7 +476,8 @@ jQuery(document).ready(function () {
     // Only combine prices when service item table is visible (service invoicing mode)
     if ($("#serviceItemTable").is(":visible")) {
       const listPrice = parseFloat($("#itemPrice").val()) || 0;
-      const serviceSellingPrice = parseFloat($("#serviceSellingPrice").val()) || 0;
+      const serviceSellingPrice =
+        parseFloat($("#serviceSellingPrice").val()) || 0;
       const discount = parseFloat($("#itemDiscount").val()) || 0;
       const baseServiceId = $("#service").val();
 
@@ -489,22 +494,22 @@ jQuery(document).ready(function () {
       // Apply discount to the combined total (discount is in percentage)
       const discountAmount = (combinedPriceBeforeDiscount * discount) / 100;
       const finalCombinedPrice = combinedPriceBeforeDiscount - discountAmount;
-      
+
       // Update the main selling price field with final combined value after discount
       $("#itemSalePrice").val(finalCombinedPrice.toFixed(2));
-      
+
       // Trigger calculation to update totals
       calculatePayment();
     }
   }
 
   // Add event listener for serviceSellingPrice changes
-  $(document).on("input", "#serviceSellingPrice", function() {
+  $(document).on("input", "#serviceSellingPrice", function () {
     // When user manually changes selling price, update the unit price
     if ($("#serviceItemTable").is(":visible")) {
       const serviceQty = parseFloat($("#serviceQty").val()) || 1;
       const currentSellingPrice = parseFloat($(this).val()) || 0;
-      
+
       // Update unit selling price based on manual input
       unitServiceSellingPrice = currentSellingPrice / serviceQty;
     }
@@ -512,30 +517,30 @@ jQuery(document).ready(function () {
   });
 
   // Add event listener for itemPrice changes when in service mode
-  $(document).on("input", "#itemPrice", function() {
+  $(document).on("input", "#itemPrice", function () {
     if ($("#serviceItemTable").is(":visible")) {
       combineServicePrices();
     }
   });
 
   // Add event listener for discount changes when in service mode
-  $(document).on("input", "#itemDiscount", function() {
+  $(document).on("input", "#itemDiscount", function () {
     if ($("#serviceItemTable").is(":visible")) {
       combineServicePrices();
     }
   });
 
   // Add event listener for serviceQty changes to update cost and selling price
-  $(document).on("input", "#serviceQty", function() {
+  $(document).on("input", "#serviceQty", function () {
     updateServiceCalculations();
   });
 
   // Add event listener for manual cost changes
-  $(document).on("input", "#item_cost_arn", function() {
+  $(document).on("input", "#item_cost_arn", function () {
     if ($("#serviceItemTable").is(":visible")) {
       const serviceQty = parseFloat($("#serviceQty").val()) || 1;
       const currentCost = parseFloat($(this).val()) || 0;
-      
+
       // Update unit cost based on manual input
       unitServiceCost = currentCost / serviceQty;
     }
@@ -549,15 +554,15 @@ jQuery(document).ready(function () {
   function updateServiceCalculations() {
     if ($("#serviceItemTable").is(":visible")) {
       const serviceQty = parseFloat($("#serviceQty").val()) || 1;
-      
+
       // Calculate total cost and selling price based on quantity
       const totalCost = unitServiceCost * serviceQty;
       const totalSellingPrice = unitServiceSellingPrice * serviceQty;
-      
+
       // Update the fields without triggering circular updates
       $("#item_cost_arn").val(totalCost.toFixed(2));
       $("#serviceSellingPrice").val(totalSellingPrice.toFixed(2));
-      
+
       // Trigger the price combination with discount calculation
       combineServicePrices();
     }
@@ -666,7 +671,6 @@ jQuery(document).ready(function () {
       itemMasterModal.hide();
     }
   });
-  
 
   $(document).on("click", "#all_itemMaster tbody tr", function () {
     let mainRow = $(this).closest("tr.table-primary"); // ✅ pick the clicked row
@@ -685,7 +689,8 @@ jQuery(document).ready(function () {
     $("#item_id").val(item_id);
 
     const invoiceType = $("#invoice_type").val();
-    const selectedPrice = invoiceType === "customer" ? customerPrice : dealerPrice;
+    const selectedPrice =
+      invoiceType === "customer" ? customerPrice : dealerPrice;
 
     $("#itemPrice").val(selectedPrice);
     $("#itemSalePrice").val(dealerPrice);
@@ -703,9 +708,6 @@ jQuery(document).ready(function () {
   });
 
   $(document).on("click", "#itemMaster tbody tr.table-info", function () {
-
-
-    
     // Get the main item row
     let mainRow = $(this).prevAll("tr.table-primary").first();
     let lastColValue = mainRow.find("td").last().text();
@@ -744,7 +746,8 @@ jQuery(document).ready(function () {
     const invoiceType = $("#invoice_type").val();
 
     // Set itemPrice based on invoice type
-    let selectedPrice = invoiceType === "customer" ? customerPrice : dealerPrice;
+    let selectedPrice =
+      invoiceType === "customer" ? customerPrice : dealerPrice;
 
     // Apply to inputs
     $("#itemCode").val(itemCode);
@@ -858,7 +861,7 @@ jQuery(document).ready(function () {
   // Check if invoice is partially paid and disable cancel button if needed
   function checkInvoicePaymentStatus() {
     const invoiceId = $("#invoice_id").val();
-    
+
     if (!invoiceId) {
       return; // No invoice ID, nothing to check
     }
@@ -872,13 +875,24 @@ jQuery(document).ready(function () {
       },
       dataType: "json",
       success: function (response) {
-        if (response && response.outstanding_settle_amount && parseFloat(response.outstanding_settle_amount) > 0) {
+        if (
+          response &&
+          response.outstanding_settle_amount &&
+          parseFloat(response.outstanding_settle_amount) > 0
+        ) {
           // Invoice has been partially paid, disable cancel button
-          $(".cancel-invoice").prop("disabled", true).addClass("disabled")
-            .attr("title", "Cannot cancel invoice that has been partially paid");
+          $(".cancel-invoice")
+            .prop("disabled", true)
+            .addClass("disabled")
+            .attr(
+              "title",
+              "Cannot cancel invoice that has been partially paid"
+            );
         } else {
           // Invoice not partially paid, enable cancel button
-          $(".cancel-invoice").prop("disabled", false).removeClass("disabled")
+          $(".cancel-invoice")
+            .prop("disabled", false)
+            .removeClass("disabled")
             .removeAttr("title");
         }
       },
@@ -1141,20 +1155,28 @@ jQuery(document).ready(function () {
 
       const item_id = $(this).find('input[name="item_id[]"]').val();
       const code = $(this).find('input[name="item_codes[]"]').val();
-      const customer_price = parseFloat($(this).find('input[name="customer_prices[]"]').val()) || 0;
-      const dealer_price = parseFloat($(this).find('input[name="dealer_prices[]"]').val()) || 0;
+      const customer_price =
+        parseFloat($(this).find('input[name="customer_prices[]"]').val()) || 0;
+      const dealer_price =
+        parseFloat($(this).find('input[name="dealer_prices[]"]').val()) || 0;
       const arn_no = $(this).find('input[name="arn_ids[]"]').val();
-      const cost = parseFloat($(this).find('input[name="arn_costs[]"]').val()) || 0;
-      const service_qty = parseFloat($(this).find('input[name="service_qty[]"]').val()) || 0;
+      const cost =
+        parseFloat($(this).find('input[name="arn_costs[]"]').val()) || 0;
+      const service_qty =
+        parseFloat($(this).find('input[name="service_qty[]"]').val()) || 0;
       const vehicle_no = $(this).find('input[name="vehicle_no[]"]').val();
       const current_km = $(this).find('input[name="current_km[]"]').val();
-      const next_service_days = $(this).find('input[name="next_service_days[]"]').val();
-      const sales_order_id = $(this).find('input[name="sales_order_ids[]"]').val();
+      const next_service_days = $(this)
+        .find('input[name="next_service_days[]"]')
+        .val();
+      const sales_order_id = $(this)
+        .find('input[name="sales_order_ids[]"]')
+        .val();
 
       // Collect arrays for PHP processing
       customerPrices.push(customer_price);
       dealerPrices.push(dealer_price);
-      salesOrderIds.push(sales_order_id || '');
+      salesOrderIds.push(sales_order_id || "");
 
       items.push({
         item_id,
@@ -1201,18 +1223,20 @@ jQuery(document).ready(function () {
     }
 
     // Validate cash sales with credit
-    if ($("#customer_code").val() === "CM/01" && $("#payment_type").val() === "2") {
+    const customerId = $("#customer_id").val();
+    const paymentType = $("input[name='payment_type']:checked").val();
+
+    if (customerId == "1" && paymentType == "2") {
       $("#customer_code").focus();
       return swal({
         title: "Error!",
         text: "Cash sales customer is not allowed to create a credit invoice.",
         type: "error",
-        timer: 3000,
-        showConfirmButton: false,
+        showConfirmButton: true,
       });
     }
 
-    // Validate credit period 
+    // Validate credit period
     if ($("input[name='payment_type']:checked").val() === "2") {
       const creditPeriod = $("#credit_period").val()?.trim();
       if (!creditPeriod) {
@@ -1225,9 +1249,6 @@ jQuery(document).ready(function () {
         });
       }
     }
-
-
-        
 
     let payments = [];
     let finalTotal = parseFloat($("#modalFinalTotal").val()) || 0;
@@ -1289,17 +1310,17 @@ jQuery(document).ready(function () {
     });
 
     if (paymentType == 2) {
-        const creditPeriod = $("#credit_period").val();
-        if (!creditPeriod) {
-            swal({
-                title: "Error!",
-                text: "Please select a credit period for credit sales.",
-                type: "error",
-                timer: 3000,
-                showConfirmButton: false,
-            });
-            return;
-        }
+      const creditPeriod = $("#credit_period").val();
+      if (!creditPeriod) {
+        swal({
+          title: "Error!",
+          text: "Please select a credit period for credit sales.",
+          type: "error",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+        return;
+      }
     }
 
     if (
@@ -1330,12 +1351,12 @@ jQuery(document).ready(function () {
     formData.append("invoice_no", $("#invoice_no").val());
     formData.append("invoice_date", $("#invoice_date").val());
     formData.append("items", JSON.stringify(items));
-    
+
     // Add sales order IDs as separate arrays for PHP processing
     salesOrderIds.forEach((id, index) => {
       formData.append(`sales_order_ids[${index}]`, id);
     });
-    
+
     formData.append(
       "sales_type",
       $('input[name="payment_type"]:checked').val()
@@ -1344,7 +1365,6 @@ jQuery(document).ready(function () {
     formData.append("department_id", $("#department_id").val() || 1); // Default to 1 if not found
     formData.append("payments", JSON.stringify(payments));
 
-    
     formData.append("paidAmount", $("#paidAmount").val() || 1); // Default to 1 if not found
 
     formData.append("credit_period", $("#credit_period").val() || null);
@@ -1415,15 +1435,23 @@ jQuery(document).ready(function () {
 
       const item_id = $(this).find('input[name="item_id[]"]').val();
       const code = $(this).find('input[name="item_codes[]"]').val();
-      const customer_price = parseFloat($(this).find('input[name="customer_prices[]"]').val()) || 0;
-      const dealer_price = parseFloat($(this).find('input[name="dealer_prices[]"]').val()) || 0;
+      const customer_price =
+        parseFloat($(this).find('input[name="customer_prices[]"]').val()) || 0;
+      const dealer_price =
+        parseFloat($(this).find('input[name="dealer_prices[]"]').val()) || 0;
       const arn_no = $(this).find('input[name="arn_ids[]"]').val();
-      const cost = parseFloat($(this).find('input[name="arn_costs[]"]').val()) || 0;
-      const service_qty = parseFloat($(this).find('input[name="service_qty[]"]').val()) || 0;
+      const cost =
+        parseFloat($(this).find('input[name="arn_costs[]"]').val()) || 0;
+      const service_qty =
+        parseFloat($(this).find('input[name="service_qty[]"]').val()) || 0;
       const vehicle_no = $(this).find('input[name="vehicle_no[]"]').val();
       const current_km = $(this).find('input[name="current_km[]"]').val();
-      const next_service_days = $(this).find('input[name="next_service_days[]"]').val();
-      const sales_order_id = $(this).find('input[name="sales_order_ids[]"]').val();
+      const next_service_days = $(this)
+        .find('input[name="next_service_days[]"]')
+        .val();
+      const sales_order_id = $(this)
+        .find('input[name="sales_order_ids[]"]')
+        .val();
 
       items.push({
         item_id,
@@ -1445,58 +1473,56 @@ jQuery(document).ready(function () {
       });
     });
 
-   // Validate items
-if (items.length === 0 && dagItems.length === 0) {
-  return swal({
-    title: "Error!",
-    text: "Please add at least one item.",
-    type: "error",
-    timer: 3000,
-    showConfirmButton: false,
-  });
-}
+    // Validate items
+    if (items.length === 0 && dagItems.length === 0) {
+      return swal({
+        title: "Error!",
+        text: "Please add at least one item.",
+        type: "error",
+        timer: 3000,
+        showConfirmButton: false,
+      });
+    }
 
-// Validate customer name
-const customerName = $("#customer_name").val().trim();
-if (!customerName) {
-  $("#customer_name").focus();
-  return swal({
-    title: "Error!",
-    text: "Please select a customer before updating invoice.",
-    type: "error",
-    timer: 3000,
-    showConfirmButton: false,
-  });
-}
+    // Validate customer name
+    const customerName = $("#customer_name").val().trim();
+    if (!customerName) {
+      $("#customer_name").focus();
+      return swal({
+        title: "Error!",
+        text: "Please select a customer before updating invoice.",
+        type: "error",
+        timer: 3000,
+        showConfirmButton: false,
+      });
+    }
 
-// Validate cash sales with credit
-if ($("#customer_code").val() === "CM/01" && $("#payment_type").val() === "2") {
-  $("#customer_code").focus();
-  return swal({
-    title: "Error!",
-    text: "Cash sales customer is not allowed to create a credit invoice.",
-    type: "error",
-    timer: 3000,
-    showConfirmButton: false,
-  });
-}
+    // Validate cash sales with credit 
+    const customerId = $("#customer_id").val();
+    const paymentType = $("input[name='payment_type']:checked").val();
 
-// Validate credit period 
-if ($("input[name='payment_type']:checked").val() === "2") {
-  const creditPeriod = $("#credit_period").val()?.trim();
-  if (!creditPeriod) {
-    return swal({
-      title: "Error!",
-      text: "Please select credit period.",
-      type: "error",
-      timer: 3000,
-      showConfirmButton: false,
-    });
-  }
-}
-
-
-        
+    if (customerId == "1" && paymentType == "2") {
+      $("#customer_code").focus();
+      return swal({
+        title: "Error!",
+        text: "Cash sales customer is not allowed to create a credit invoice.",
+        type: "error",
+        showConfirmButton: true,
+      });
+    }
+    // Validate credit period
+    if ($("input[name='payment_type']:checked").val() === "2") {
+      const creditPeriod = $("#credit_period").val()?.trim();
+      if (!creditPeriod) {
+        return swal({
+          title: "Error!",
+          text: "Please select credit period.",
+          type: "error",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+      }
+    }
 
     let payments = [];
     let finalTotal = parseFloat($("#modalFinalTotal").val()) || 0;
@@ -1524,7 +1550,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         chequeDate = dateInput ? dateInput : "1000-01-01"; // Use default date if not provided
       }
 
-      if (!methodId && $("#customer_id").val() == "CM/01") {
+      if (!methodId && $("#customer_id").val() == "1") {
         swal({
           title: "Error!",
           text: "Please select a payment method in all rows.",
@@ -1535,7 +1561,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         return false; // break out of each
       }
 
-      if (amount <= 0 && $("#customer_id").val() == "CM/01") {
+      if (amount <= 0 && $("#customer_id").val() == "1") {
         swal({
           title: "Error!",
           text: "Please enter a valid amount in all rows.",
@@ -1558,17 +1584,17 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     });
 
     if (paymentType == 2) {
-        const creditPeriod = $("#credit_period").val();
-        if (!creditPeriod) {
-            swal({
-                title: "Error!",
-                text: "Please select a credit period for credit sales.",
-                type: "error",
-                timer: 3000,
-                showConfirmButton: false,
-            });
-            return;
-        }
+      const creditPeriod = $("#credit_period").val();
+      if (!creditPeriod) {
+        swal({
+          title: "Error!",
+          text: "Please select a credit period for credit sales.",
+          type: "error",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+        return;
+      }
     }
 
     if (
@@ -1607,7 +1633,6 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     formData.append("department_id", $("#department_id").val() || 1); // Default to 1 if not found
     formData.append("payments", JSON.stringify(payments));
 
-    
     formData.append("paidAmount", $("#paidAmount").val() || 1); // Default to 1 if not found
 
     formData.append("credit_period", $("#credit_period").val() || null);
@@ -1669,7 +1694,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   function processDAGInvoiceCreation() {
     const finalTotal = parseFloat($("#finalTotal").val()) || 0;
     const paymentType = $('input[name="payment_type"]:checked').val();
-    
+
     // For cash payments, check if paid amount is sufficient
     if (paymentType === "1") {
       const paid = parseFloat($("#amountPaid").val()) || 0;
@@ -1700,7 +1725,9 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       if (cost > price) {
         swal({
           title: "Validation Error!",
-          text: `Cost (${cost.toFixed(2)}) cannot exceed price (${price.toFixed(2)}) for item: ${vehicleNo} - ${serialNo}`,
+          text: `Cost (${cost.toFixed(2)}) cannot exceed price (${price.toFixed(
+            2
+          )}) for item: ${vehicleNo} - ${serialNo}`,
           type: "error",
           timer: 4000,
           showConfirmButton: true,
@@ -1719,7 +1746,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
           cost: cost,
           qty: 1, // Always 1 for DAG items
           total: price,
-          is_dag: true
+          is_dag: true,
         });
       }
     });
@@ -1802,10 +1829,10 @@ if ($("input[name='payment_type']:checked").val() === "2") {
           showConfirmButton: false,
         });
 
-        if ($("#paymentModal").hasClass('show')) {
+        if ($("#paymentModal").hasClass("show")) {
           $("#paymentModal").modal("hide");
         }
-        
+
         // Open regular invoice page for DAG invoices too
         window.open("invoice.php?invoice_no=" + invoiceId, "_blank");
         setTimeout(() => location.reload(), 2000);
@@ -1829,7 +1856,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
 
     let availableQty = parseFloat($("#available_qty").val()) || 0;
     let serviceQty = parseFloat($("#serviceQty").val()) || 0;
-    
+
     // Get vehicle no and current km for services
     const vehicleNo = $("#vehicleNo").val().trim() || "";
     const currentKm = $("#currentKm").val().trim() || "";
@@ -1850,7 +1877,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       });
       return;
     }
-    
+
     // Quantity validation: skip for service id = 1
     if (!isServiceOne && qty <= 0) {
       swal({
@@ -1862,7 +1889,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       });
       return;
     }
-    
+
     // Price validation: skip for service id = 1
     if (!isServiceOne && price <= 0) {
       swal({
@@ -1873,7 +1900,11 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         showConfirmButton: false,
       });
       return;
-    } else if (!code.startsWith("SI") && !code.startsWith("SV") && qty > availableQty) {
+    } else if (
+      !code.startsWith("SI") &&
+      !code.startsWith("SV") &&
+      qty > availableQty
+    ) {
       swal({
         title: "Error!",
         text: "Transfer quantity cannot exceed available quantity!",
@@ -1909,7 +1940,11 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       remainingQty = 0;
     }
 
-    if (!code.startsWith("SI") && !code.startsWith("SV") && qty > remainingQty) {
+    if (
+      !code.startsWith("SI") &&
+      !code.startsWith("SV") &&
+      qty > remainingQty
+    ) {
       swal(
         "Error!",
         `Only ${remainingQty} qty available for the current ARN.`,
@@ -1954,15 +1989,17 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     // Check if both service and service item are selected (service item table is visible)
     if ($("#serviceItemTable").is(":visible")) {
       // Add TWO separate rows: one for service, one for service item
-      
+
       // Get service details
       const serviceId = $("#service").val();
       const serviceName = $("#service option:selected").text().trim();
       const serviceCode = "SV/" + serviceId.padStart(4, "0");
       const servicePrice = price; // Main service price
       const serviceQtyVal = 1; // Service quantity is always 1
-      const serviceTotal = servicePrice * serviceQtyVal - (servicePrice * serviceQtyVal * (discount / 100));
-      
+      const serviceTotal =
+        servicePrice * serviceQtyVal -
+        servicePrice * serviceQtyVal * (discount / 100);
+
       // Add service row (only if service ID is not 1)
       if (serviceId !== "1") {
         const serviceRow = `
@@ -1994,17 +2031,19 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         `;
         $("#invoiceItemsBody").append(serviceRow);
       }
-      
+
       // Get service item details
       const serviceItemPrice = parseFloat($("#serviceSellingPrice").val()) || 0;
-      const serviceItemUnitPrice = serviceQty > 0 ? serviceItemPrice / serviceQty : 0;
-      const serviceItemTotal = serviceItemPrice - (serviceItemPrice * (discount / 100));
+      const serviceItemUnitPrice =
+        serviceQty > 0 ? serviceItemPrice / serviceQty : 0;
+      const serviceItemTotal =
+        serviceItemPrice - serviceItemPrice * (discount / 100);
       const serviceItemCost = parseFloat($("#item_cost_arn").val()) || 0;
       const serviceItemName = $("#service_items option:selected").text().trim();
       const combinedServiceItemName = serviceName
         ? serviceName + " - " + serviceItemName
         : serviceItemName;
-      
+
       // Add service item row
       const serviceItemRow = `
             <tr>
@@ -2034,12 +2073,11 @@ if ($("input[name='payment_type']:checked").val() === "2") {
             </tr>
         `;
       $("#invoiceItemsBody").append(serviceItemRow);
-      
     } else {
       // Regular item or standalone service/service item - add single row
       const total = price * qty - price * qty * (discount / 100);
       const cost = parseFloat($("#item_cost_arn").val()) || 0;
-      
+
       const row = `
             <tr>
                 <td>${code}
@@ -2122,9 +2160,13 @@ if ($("input[name='payment_type']:checked").val() === "2") {
 
     $("#invoiceItemsBody tr").each(function () {
       // Read price and quantity from the table
-      const price = parseFloat($(this).find(".item-price").text().replace(/,/g, "")) || 0;
-      const qty = parseFloat($(this).find(".item-qty").text().replace(/,/g, "")) || 0;
-      const discount = parseFloat($(this).find(".item-discount").text().replace(/,/g, "")) || 0;
+      const price =
+        parseFloat($(this).find(".item-price").text().replace(/,/g, "")) || 0;
+      const qty =
+        parseFloat($(this).find(".item-qty").text().replace(/,/g, "")) || 0;
+      const discount =
+        parseFloat($(this).find(".item-discount").text().replace(/,/g, "")) ||
+        0;
 
       // Calculate totals
       const itemTotal = price * qty;
@@ -2242,11 +2284,11 @@ if ($("input[name='payment_type']:checked").val() === "2") {
 
   $("#paidAmount").on("input", function () {
     const paidAmount = parseFloat($(this).val()) || 0;
-    const finalTotal = parseFloat($("#finalTotal").val().replace(/,/g, '')) || 0;
+    const finalTotal =
+      parseFloat($("#finalTotal").val().replace(/,/g, "")) || 0;
     const balanceAmount = finalTotal - paidAmount;
     $("#balanceAmount").val(balanceAmount.toFixed(2));
-});
-
+  });
 
   // Get all ARN IDs from the table
   function getAllArnIds() {
@@ -2266,7 +2308,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     if ($(this).prop("disabled") || $(this).hasClass("disabled")) {
       return false;
     }
-    
+
     const invoiceId = $("#invoice_id").val();
     let arnIds = getAllArnIds();
 
@@ -2324,7 +2366,9 @@ if ($("input[name='payment_type']:checked").val() === "2") {
             } else if (jsonStr.status === "error") {
               swal({
                 title: "Error!",
-                text: jsonStr.message || "Failed to cancel the invoice. Please try again.",
+                text:
+                  jsonStr.message ||
+                  "Failed to cancel the invoice. Please try again.",
                 type: "error",
                 timer: 3000,
                 showConfirmButton: false,
@@ -2459,28 +2503,28 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   // DAG Selection Handler
   $(document).on("click", ".select-dag", function () {
     const data = $(this).data();
-    
+
     // Set DAG information
     $("#dag_id").val(data.id);
     $("#ref_no").val(data.ref_no);
-    
+
     // Set customer information
     $("#customer_code").val(data.customer_code);
     $("#customer_name").val(data.customer_name);
     $("#customer_id").val(data.customer_id);
     $("#department_id").val(data.department_id);
-    
+
     // Close modal
     $("#dagModel").modal("hide");
-    
+
     // Hide item table and show DAG table
     $("#invoiceTable").hide();
     $("#addItemTable").hide();
     $("#dagTableHide").show();
-    
+
     // Clear DAG items table
     $("#dagItemsBodyInvoice").empty();
-    
+
     // Fetch DAG items
     fetchDagItems(data.id);
   });
@@ -2490,30 +2534,34 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     $.ajax({
       url: "ajax/php/create-dag.php",
       type: "POST",
-      data: { 
+      data: {
         dag_id: dagId,
-        for_invoice: true // Only get non-invoiced items
+        for_invoice: true, // Only get non-invoiced items
       },
       dataType: "json",
       success: function (response) {
         if (response.status === "success" && response.data.length > 0) {
           const items = response.data;
-          
+
           items.forEach(function (item) {
             const row = `
               <tr class="dag-item-row">
                 <td>${item.vehicle_no}</td>
-                <td>${item.belt_title || ''}</td>
-                <td>${item.size_name || ''}</td>
-                <td>${item.serial_number || ''}</td>
+                <td>${item.belt_title || ""}</td>
+                <td>${item.size_name || ""}</td>
+                <td>${item.serial_number || ""}</td>
                 <td>
                   <input type="number" class="form-control form-control-sm dag-cost" 
-                         value="${item.total_amount || '0.00'}" step="0.01" min="0" 
+                         value="${
+                           item.total_amount || "0.00"
+                         }" step="0.01" min="0" 
                          data-dag-item-id="${item.id}">
                 </td>
                 <td>
                   <input type="number" class="form-control form-control-sm dag-price" 
-                         value="${item.casing_cost || '0.00'}" step="0.01" min="0" 
+                         value="${
+                           item.casing_cost || "0.00"
+                         }" step="0.01" min="0" 
                          data-dag-item-id="${item.id}">
                 </td>
                 <td>
@@ -2526,10 +2574,9 @@ if ($("input[name='payment_type']:checked").val() === "2") {
             `;
             $("#dagItemsBodyInvoice").append(row);
           });
-          
+
           // Remove "no items" row if it exists
           $("#noDagItemRow").remove();
-          
         } else {
           $("#dagItemsBodyInvoice").html(`
             <tr id="noDagItemRow">
@@ -2540,15 +2587,15 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       },
       error: function () {
         swal("Error!", "Failed to load DAG items.", "error");
-      }
+      },
     });
   }
 
   // Handle price input changes for DAG items
-  $(document).on('input', '.dag-price', function () {
-    const row = $(this).closest('tr');
+  $(document).on("input", ".dag-price", function () {
+    const row = $(this).closest("tr");
     const price = parseFloat($(this).val()) || 0;
-    const costInput = row.find('.dag-cost');
+    const costInput = row.find(".dag-cost");
     const cost = parseFloat(costInput.val()) || 0;
 
     // If cost is higher than price, reset cost to price value
@@ -2567,10 +2614,10 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   });
 
   // Handle cost input changes for DAG items
-  $(document).on('input', '.dag-cost', function () {
-    const row = $(this).closest('tr');
+  $(document).on("input", ".dag-cost", function () {
+    const row = $(this).closest("tr");
     const cost = parseFloat($(this).val()) || 0;
-    const price = parseFloat(row.find('.dag-price').val()) || 0;
+    const price = parseFloat(row.find(".dag-price").val()) || 0;
 
     // If cost exceeds price, prevent the change and show warning
     if (cost > price) {
@@ -2588,10 +2635,10 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   });
 
   // Remove DAG item
-  $(document).on('click', '.remove-dag-item', function () {
-    $(this).closest('tr').remove();
+  $(document).on("click", ".remove-dag-item", function () {
+    $(this).closest("tr").remove();
     calculateDagTotals();
-    
+
     // Show "no items" row if no items left
     if ($("#dagItemsBodyInvoice tr").length === 0) {
       $("#dagItemsBodyInvoice").html(`
@@ -2605,12 +2652,12 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   // Calculate DAG totals
   function calculateDagTotals() {
     let subTotal = 0;
-    
+
     $("#dagItemsBodyInvoice .dag-price").each(function () {
       const price = parseFloat($(this).val()) || 0;
       subTotal += price;
     });
-    
+
     // Update totals
     $("#subTotal").val(subTotal.toFixed(2));
     $("#finalTotal").val(subTotal.toFixed(2));
@@ -2619,14 +2666,16 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   // SALES ORDERS MODAL
   $("#salesOrdersModal").on("shown.bs.modal", function () {
     // Clear search input when modal opens
-    $('#salesOrdersSearch').val('');
+    $("#salesOrdersSearch").val("");
     loadAllSalesOrders();
   });
 
   // Function to load all sales orders for the modal
   function loadAllSalesOrders() {
-    $("#noSalesOrdersRow").html('<td colspan="7" class="text-center text-secondary py-3"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading sales orders, please wait...</td>');
-    
+    $("#noSalesOrdersRow").html(
+      '<td colspan="7" class="text-center text-secondary py-3"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading sales orders, please wait...</td>'
+    );
+
     // Collect item codes from current invoice items
     let currentItemCodes = [];
     $("#invoiceItemsBody tr").each(function () {
@@ -2635,51 +2684,55 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         currentItemCodes.push(itemCode);
       }
     });
-    
+
     $.ajax({
       url: "ajax/php/sales-invoice.php",
       method: "POST",
       data: {
         action: "fetch_sales_orders",
         invoice_type: $("#invoice_type").val(),
-        current_item_codes: JSON.stringify(currentItemCodes) // Send current item codes for filtering
+        current_item_codes: JSON.stringify(currentItemCodes), // Send current item codes for filtering
       },
       dataType: "json",
       success: function (response) {
         if (response.status === "success") {
           populateSalesOrdersModal(response.data);
         } else {
-          $("#salesOrdersTableBody").html('<tr><td colspan="7" class="text-center text-danger py-3">Failed to load sales orders</td></tr>');
+          $("#salesOrdersTableBody").html(
+            '<tr><td colspan="7" class="text-center text-danger py-3">Failed to load sales orders</td></tr>'
+          );
         }
       },
       error: function () {
-        $("#salesOrdersTableBody").html('<tr><td colspan="7" class="text-center text-danger py-3">Error loading sales orders</td></tr>');
-      }
+        $("#salesOrdersTableBody").html(
+          '<tr><td colspan="7" class="text-center text-danger py-3">Error loading sales orders</td></tr>'
+        );
+      },
     });
   }
 
-
-  
   // Store original orders data for filtering
   let originalOrdersData = [];
 
   // Populate the sales orders modal table
   function populateSalesOrdersModal(orders) {
     originalOrdersData = orders; // Store original data for filtering
-    
+
     if (orders.length === 0) {
-      $("#salesOrdersTableBody").html('<tr><td colspan="7" class="text-center text-muted py-3">No sales orders found</td></tr>');
+      $("#salesOrdersTableBody").html(
+        '<tr><td colspan="7" class="text-center text-muted py-3">No sales orders found</td></tr>'
+      );
       return;
     }
 
     renderOrdersTable(orders);
-    
+
     // Initialize DataTable for pagination only
-    if ($.fn.DataTable.isDataTable('#salesOrdersTable')) {
-      $('#salesOrdersTable').DataTable().destroy();
+    if ($.fn.DataTable.isDataTable("#salesOrdersTable")) {
+      $("#salesOrdersTable").DataTable().destroy();
     }
-    
-    var salesOrdersTable = $('#salesOrdersTable').DataTable({
+
+    var salesOrdersTable = $("#salesOrdersTable").DataTable({
       pageLength: 10,
       searching: false, // Disable default search
       lengthChange: false,
@@ -2687,8 +2740,8 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       paging: true,
       ordering: false, // Disable ordering to prevent conflicts
       columnDefs: [
-        { orderable: false, targets: '_all' } // Disable ordering on all columns
-      ]
+        { orderable: false, targets: "_all" }, // Disable ordering on all columns
+      ],
     });
 
     // Setup real-time search
@@ -2698,139 +2751,157 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   // Render orders table rows
   function renderOrdersTable(orders) {
     let tbody = "";
-    orders.forEach(function(order, index) {
-      const statusClass = order.status === 0 ? 'badge bg-warning' : 
-                         order.status === 1 ? 'badge bg-success' : 
-                         order.status === 2 ? 'badge bg-danger' : 'badge bg-secondary';
+    orders.forEach(function (order, index) {
+      const statusClass =
+        order.status === 0
+          ? "badge bg-warning"
+          : order.status === 1
+          ? "badge bg-success"
+          : order.status === 2
+          ? "badge bg-danger"
+          : "badge bg-secondary";
 
       tbody += `<tr class="sales-order-select" 
                       data-order-id="${order.order_db_id}"
                       data-order-data='${JSON.stringify(order)}'
-                      data-search-text="${order.order_id.toLowerCase()} ${order.customer_name.toLowerCase()} ${(order.marketing_executive_name || '').toLowerCase()}">
+                      data-search-text="${order.order_id.toLowerCase()} ${order.customer_name.toLowerCase()} ${(
+        order.marketing_executive_name || ""
+      ).toLowerCase()}">
                   <td>${index + 1}</td>
                   <td>${order.order_id}</td>
                   <td>${order.order_date}</td>
                   <td>${order.customer_name}</td>
-                  <td>${order.marketing_executive_name || 'N/A'}</td>
-                  <td><span class="${statusClass}">${order.status_text}</span></td>
+                  <td>${order.marketing_executive_name || "N/A"}</td>
+                  <td><span class="${statusClass}">${
+        order.status_text
+      }</span></td>
                   <td><button type="button" class="btn btn-primary btn-sm select-order-btn">Select</button></td>
                 </tr>`;
     });
-    
+
     $("#salesOrdersTableBody").html(tbody);
   }
 
   // Setup real-time search functionality
   function setupRealTimeSearch() {
-    $('#salesOrdersSearch').off('keyup input').on('keyup input', function() {
-      const searchTerm = $(this).val().toLowerCase().trim();
-      
-      if (searchTerm === '') {
-        // Show all rows if search is empty
-        $("#salesOrdersTable tbody tr").show();
-      } else {
-        // Filter rows based on search term
-        $("#salesOrdersTable tbody tr").each(function() {
-          const searchText = $(this).data('search-text') || '';
-          if (searchText.includes(searchTerm)) {
-            $(this).show();
-          } else {
-            $(this).hide();
-          }
-        });
-      }
-      
-      // Update DataTable display after filtering
-      if ($.fn.DataTable.isDataTable('#salesOrdersTable')) {
-        $('#salesOrdersTable').DataTable().draw(false);
-      }
-    });
+    $("#salesOrdersSearch")
+      .off("keyup input")
+      .on("keyup input", function () {
+        const searchTerm = $(this).val().toLowerCase().trim();
+
+        if (searchTerm === "") {
+          // Show all rows if search is empty
+          $("#salesOrdersTable tbody tr").show();
+        } else {
+          // Filter rows based on search term
+          $("#salesOrdersTable tbody tr").each(function () {
+            const searchText = $(this).data("search-text") || "";
+            if (searchText.includes(searchTerm)) {
+              $(this).show();
+            } else {
+              $(this).hide();
+            }
+          });
+        }
+
+        // Update DataTable display after filtering
+        if ($.fn.DataTable.isDataTable("#salesOrdersTable")) {
+          $("#salesOrdersTable").DataTable().draw(false);
+        }
+      });
   }
 
   // Handle sales order selection
-  $(document).on('click', '.select-order-btn', function () {
-    const row = $(this).closest('tr');
-    const orderDataJson = row.data('order-data');
-    
+  $(document).on("click", ".select-order-btn", function () {
+    const row = $(this).closest("tr");
+    const orderDataJson = row.data("order-data");
+
     try {
-      const orderData = typeof orderDataJson === 'string' ? JSON.parse(orderDataJson) : orderDataJson;
-      
+      const orderData =
+        typeof orderDataJson === "string"
+          ? JSON.parse(orderDataJson)
+          : orderDataJson;
+
       // Confirm selection with SweetAlert
-      swal({
-        title: "Confirm Selection",
-        text: `Are you sure you want to load sales order "${orderData.order_id}"?\n\nThis will populate customer details and load all items from this order into the Sales Rep Orders table for manual selection.`,
-        type: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Load Order",
-        cancelButtonText: "Cancel"
-      }, function(isConfirm) {
-        if (isConfirm) {
-          loadSalesOrderToInvoice(orderData);
-          $("#salesOrdersModal").modal("hide");
+      swal(
+        {
+          title: "Confirm Selection",
+          text: `Are you sure you want to load sales order "${orderData.order_id}"?\n\nThis will populate customer details and load all items from this order into the Sales Rep Orders table for manual selection.`,
+          type: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, Load Order",
+          cancelButtonText: "Cancel",
+        },
+        function (isConfirm) {
+          if (isConfirm) {
+            loadSalesOrderToInvoice(orderData);
+            $("#salesOrdersModal").modal("hide");
+          }
         }
-      });
+      );
     } catch (e) {
-      console.error('Error parsing order data:', e);
+      console.error("Error parsing order data:", e);
       swal("Error", "Failed to load sales order data", "error");
     }
   });
 
   // Function to load sales order data to invoice
   function loadSalesOrderToInvoice(orderData) {
-    console.log('Loading sales order to invoice:', orderData);
-    
+    console.log("Loading sales order to invoice:", orderData);
+
     // Ensure Sales Rep Orders functionality is enabled
     if (!$("#sales_rep_orders").is(":checked")) {
       $("#sales_rep_orders").prop("checked", true).trigger("change");
     }
-    
+
     // Populate customer fields
-    $("#customer_id").val(orderData.customer_id || '');
-    $("#customer_code").val(orderData.customer_code || '');
-    $("#customer_name").val(orderData.customer_name || '');
-    $("#customer_mobile").val(orderData.customer_mobile || '');
-    $("#customer_address").val(orderData.customer_address || '');
-    
+    $("#customer_id").val(orderData.customer_id || "");
+    $("#customer_code").val(orderData.customer_code || "");
+    $("#customer_name").val(orderData.customer_name || "");
+    $("#customer_mobile").val(orderData.customer_mobile || "");
+    $("#customer_address").val(orderData.customer_address || "");
+
     // Populate marketing executive
     if (orderData.marketing_executive_id) {
-      $("#marketing_executive").val(orderData.marketing_executive_id).trigger('change');
+      $("#marketing_executive")
+        .val(orderData.marketing_executive_id)
+        .trigger("change");
     }
-    
+
     // Load items into Sales Rep Orders table instead of directly to invoice
     if (orderData.items && orderData.items.length > 0) {
       // Populate the sales rep orders table with this single order
       populateSalesRepOrdersTable([orderData]);
-      
+
       // Show success message
       swal({
         title: "Success!",
         text: `Sales order "${orderData.order_id}" has been loaded successfully. Customer details have been populated and all items are now available in the Sales Rep Orders table for manual selection.`,
         type: "success",
         timer: 4000,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } else {
       // No items, just show customer data loaded
-      $("#customer_code").trigger('change');
-      $("#customer_name").trigger('change');
-      
+      $("#customer_code").trigger("change");
+      $("#customer_name").trigger("change");
+
       swal({
         title: "Success!",
         text: `Sales order "${orderData.order_id}" customer details have been loaded. No items found in this order.`,
         type: "success",
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     }
   }
 
-
   // Fetch sales orders data
   function fetchSalesOrders(departmentId) {
     const invoiceType = $("#invoice_type").val();
-    
+
     // Collect item codes from current invoice items for filtering
     let currentItemCodes = [];
     $("#invoiceItemsBody tr").each(function () {
@@ -2839,7 +2910,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         currentItemCodes.push(itemCode);
       }
     });
-    
+
     $.ajax({
       url: "ajax/php/sales-invoice.php",
       method: "POST",
@@ -2847,18 +2918,25 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         action: "fetch_sales_orders",
         department_id: departmentId,
         invoice_type: invoiceType,
-        current_item_codes: JSON.stringify(currentItemCodes) // Send current item codes for filtering
+        current_item_codes: JSON.stringify(currentItemCodes), // Send current item codes for filtering
       },
       dataType: "json",
       success: function (response) {
         if (response.status === "success") {
           // Store data globally for auto-fill functionality
           currentSalesOrdersData = response.data;
-          console.log('Sales orders data stored globally:', currentSalesOrdersData);
-          
+          console.log(
+            "Sales orders data stored globally:",
+            currentSalesOrdersData
+          );
+
           populateSalesRepOrdersTable(response.data);
         } else {
-          swal("Error", response.message || "Failed to fetch sales orders", "error");
+          swal(
+            "Error",
+            response.message || "Failed to fetch sales orders",
+            "error"
+          );
           $("#sales_rep_orders").prop("checked", false);
           $("#salesRepOrdersTable").hide();
         }
@@ -2867,7 +2945,7 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         swal("Error", "Failed to fetch sales orders", "error");
         $("#sales_rep_orders").prop("checked", false);
         $("#salesRepOrdersTable").hide();
-      }
+      },
     });
   }
 
@@ -2888,19 +2966,22 @@ if ($("input[name='payment_type']:checked").val() === "2") {
 
     // Get current invoice type to determine which price to show
     const invoiceType = $("#invoice_type").val();
-    const priceType = invoiceType === "customer" ? "customer_price" : "dealer_price";
-    const priceLabel = invoiceType === "customer" ? "Customer Price" : "Dealer Price";
+    const priceType =
+      invoiceType === "customer" ? "customer_price" : "dealer_price";
+    const priceLabel =
+      invoiceType === "customer" ? "Customer Price" : "Dealer Price";
 
     // Update table header dynamically
     $("#salesRepOrdersTable thead th:nth-child(6)").text(priceLabel);
 
     let tbody = "";
-    orders.forEach(function(order) {
-      order.items.forEach(function(item) {
+    orders.forEach(function (order) {
+      order.items.forEach(function (item) {
         // Use the appropriate price based on invoice type, fallback to dealer_price if customer_price is 0 or null
-        const selectedPrice = invoiceType === "customer" 
-          ? (parseFloat(item.customer_price) || parseFloat(item.dealer_price)) 
-          : parseFloat(item.dealer_price);
+        const selectedPrice =
+          invoiceType === "customer"
+            ? parseFloat(item.customer_price) || parseFloat(item.dealer_price)
+            : parseFloat(item.dealer_price);
         const sellingPrice = selectedPrice; // Initial selling price is the selected price
 
         const orderDataObject = {
@@ -2910,9 +2991,9 @@ if ($("input[name='payment_type']:checked").val() === "2") {
           customer_mobile: order.customer_mobile,
           customer_address: order.customer_address,
           marketing_executive_id: order.marketing_executive_id,
-          marketing_executive_name: order.marketing_executive_name
+          marketing_executive_name: order.marketing_executive_name,
         };
-        
+
         const orderDataJson = JSON.stringify(orderDataObject);
 
         tbody += `<tr class="sales-order-row" 
@@ -2933,13 +3014,13 @@ if ($("input[name='payment_type']:checked").val() === "2") {
                   </tr>`;
       });
     });
-    
+
     $("#noSalesRepOrdersRow").hide();
     $("#salesRepOrdersBody").append(tbody);
   }
 
   // Handle discount changes in sales rep orders table
-  $(document).on("input", ".discount-input", function() {
+  $(document).on("input", ".discount-input", function () {
     const row = $(this).closest("tr");
     const selectedPrice = parseFloat(row.find(".selected-price").text()) || 0;
     const discountPercent = parseFloat($(this).val()) || 0;
@@ -2951,18 +3032,18 @@ if ($("input[name='payment_type']:checked").val() === "2") {
   });
 
   // Add to invoice functionality
-  $(document).on('click', '.add-to-invoice', function () {
-    const row = $(this).closest('tr');
-    const orderId = row.find('td').eq(0).text();
-    const orderDbId = row.data('order-db-id');
-    const itemId = row.data('item-id');
-    const itemCode = row.find('td').eq(1).text();
-    const itemName = row.find('td').eq(2).text();
-    const orderQty = parseInt(row.find('.order-qty').text()) || 0;
-    const stockQty = parseInt(row.find('.stock-qty').text()) || 0;
-    const selectedPrice = row.find('.selected-price').text();
-    const discount = row.find('.discount-input').val();
-    const sellingPrice = row.find('.selling-price').text();
+  $(document).on("click", ".add-to-invoice", function () {
+    const row = $(this).closest("tr");
+    const orderId = row.find("td").eq(0).text();
+    const orderDbId = row.data("order-db-id");
+    const itemId = row.data("item-id");
+    const itemCode = row.find("td").eq(1).text();
+    const itemName = row.find("td").eq(2).text();
+    const orderQty = parseInt(row.find(".order-qty").text()) || 0;
+    const stockQty = parseInt(row.find(".stock-qty").text()) || 0;
+    const selectedPrice = row.find(".selected-price").text();
+    const discount = row.find(".discount-input").val();
+    const sellingPrice = row.find(".selling-price").text();
 
     // Check stock availability
     if (stockQty <= 0) {
@@ -2970,74 +3051,123 @@ if ($("input[name='payment_type']:checked").val() === "2") {
         title: "No Stock Available",
         text: `Item "${itemName}" (${itemCode}) has no stock available. Cannot add to invoice.`,
         type: "warning",
-        confirmButtonText: "OK"
+        confirmButtonText: "OK",
       });
       return;
     }
 
     // Determine quantity to add (minimum of order qty and stock qty)
     const qtyToAdd = Math.min(orderQty, stockQty);
-    
+
     // Show confirmation if we're adding less than ordered quantity
     if (qtyToAdd < orderQty) {
-      swal({
-        title: "Limited Stock Available",
-        text: `Item "${itemName}" (${itemCode}) has only ${stockQty} units in stock, but ${orderQty} units were ordered. Only ${qtyToAdd} units will be added to the invoice.`,
-        type: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Add Available Stock",
-        cancelButtonText: "Cancel"
-      }, function(isConfirm) {
-        if (isConfirm) {
-          processAddToInvoice(row, orderId, orderDbId, itemId, itemCode, itemName, qtyToAdd, selectedPrice, discount, sellingPrice);
+      swal(
+        {
+          title: "Limited Stock Available",
+          text: `Item "${itemName}" (${itemCode}) has only ${stockQty} units in stock, but ${orderQty} units were ordered. Only ${qtyToAdd} units will be added to the invoice.`,
+          type: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Add Available Stock",
+          cancelButtonText: "Cancel",
+        },
+        function (isConfirm) {
+          if (isConfirm) {
+            processAddToInvoice(
+              row,
+              orderId,
+              orderDbId,
+              itemId,
+              itemCode,
+              itemName,
+              qtyToAdd,
+              selectedPrice,
+              discount,
+              sellingPrice
+            );
+          }
         }
-      });
+      );
     } else {
       // Stock is sufficient, add normally
-      processAddToInvoice(row, orderId, orderDbId, itemId, itemCode, itemName, qtyToAdd, selectedPrice, discount, sellingPrice);
+      processAddToInvoice(
+        row,
+        orderId,
+        orderDbId,
+        itemId,
+        itemCode,
+        itemName,
+        qtyToAdd,
+        selectedPrice,
+        discount,
+        sellingPrice
+      );
     }
   });
 
   // Helper function to process adding item to invoice
-  function processAddToInvoice(row, orderId, orderDbId, itemId, itemCode, itemName, qty, selectedPrice, discount, sellingPrice) {
-
+  function processAddToInvoice(
+    row,
+    orderId,
+    orderDbId,
+    itemId,
+    itemCode,
+    itemName,
+    qty,
+    selectedPrice,
+    discount,
+    sellingPrice
+  ) {
     // Get order data from the row's data attributes
-    const orderDataJson = row.data('order-data');
+    const orderDataJson = row.data("order-data");
     let orderData = null;
-    
+
     try {
-      if (typeof orderDataJson === 'string') {
+      if (typeof orderDataJson === "string") {
         orderData = JSON.parse(orderDataJson);
       } else {
         orderData = orderDataJson;
       }
     } catch (e) {
-      console.error('Error parsing order data:', e);
+      console.error("Error parsing order data:", e);
     }
-    
+
     // Populate customer fields if not already filled
     if (orderData && !$("#customer_code").val()) {
-      $("#customer_id").val(orderData.customer_id || '');
-      $("#customer_code").val(orderData.customer_code || '');
-      $("#customer_name").val(orderData.customer_name || '');
-      $("#customer_mobile").val(orderData.customer_mobile || '');
-      $("#customer_address").val(orderData.customer_address || '');
-      
+      $("#customer_id").val(orderData.customer_id || "");
+      $("#customer_code").val(orderData.customer_code || "");
+      $("#customer_name").val(orderData.customer_name || "");
+      $("#customer_mobile").val(orderData.customer_mobile || "");
+      $("#customer_address").val(orderData.customer_address || "");
+
       // Trigger change events
-      $("#customer_code").trigger('change');
-      $("#customer_name").trigger('change');
+      $("#customer_code").trigger("change");
+      $("#customer_name").trigger("change");
     }
-    
+
     // Populate marketing executive field if not already filled
-    if (orderData && orderData.marketing_executive_id && !$("#marketing_executive").val()) {
+    if (
+      orderData &&
+      orderData.marketing_executive_id &&
+      !$("#marketing_executive").val()
+    ) {
       $("#marketing_executive").val(orderData.marketing_executive_id);
-      $("#marketing_executive").trigger('change');
+      $("#marketing_executive").trigger("change");
     }
 
     // Add to main invoice table using the validated quantity
-    addSalesOrderItemToInvoice(orderId, itemId, itemCode, itemName, qty, selectedPrice, sellingPrice, discount, orderDbId);
+    addSalesOrderItemToInvoice(
+      orderId,
+      itemId,
+      itemCode,
+      itemName,
+      qty,
+      selectedPrice,
+      sellingPrice,
+      discount,
+      orderDbId
+    );
 
     // Update sales order status to 1 (invoiced)
     updateSalesOrderStatus(orderDbId);
@@ -3059,22 +3189,35 @@ if ($("input[name='payment_type']:checked").val() === "2") {
       data: {
         action: "update_sales_order_status",
         order_id: orderDbId,
-        status: 1
+        status: 1,
       },
       dataType: "json",
-      success: function(response) {
+      success: function (response) {
         if (response.status !== "success") {
-          console.error("Failed to update sales order status:", response.message);
+          console.error(
+            "Failed to update sales order status:",
+            response.message
+          );
         }
       },
-      error: function() {
+      error: function () {
         console.error("Error updating sales order status");
-      }
+      },
     });
   }
 
   // Function to add sales order item to main invoice table
-  function addSalesOrderItemToInvoice(orderId, itemId, itemCode, itemName, qty, selectedPrice, sellingPrice, discount, orderDbId) {
+  function addSalesOrderItemToInvoice(
+    orderId,
+    itemId,
+    itemCode,
+    itemName,
+    qty,
+    selectedPrice,
+    sellingPrice,
+    discount,
+    orderDbId
+  ) {
     // Hide no items row
     $("#noInvoiceItemRow").hide();
 
@@ -3082,8 +3225,12 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     const total = parseFloat(sellingPrice) * parseFloat(qty);
 
     // Get customer and dealer prices from the row data attributes
-    const row = $(`.sales-order-row[data-item-id="${itemId}"][data-order-db-id="${orderDbId}"]`);
-    const customerPrice = parseFloat(row.data("customer-price")) || parseFloat(row.data("dealer-price"));
+    const row = $(
+      `.sales-order-row[data-item-id="${itemId}"][data-order-db-id="${orderDbId}"]`
+    );
+    const customerPrice =
+      parseFloat(row.data("customer-price")) ||
+      parseFloat(row.data("dealer-price"));
     const dealerPrice = parseFloat(row.data("dealer-price"));
 
     // For sales rep orders, we need to find an available ARN or use the item code
@@ -3107,7 +3254,9 @@ if ($("input[name='payment_type']:checked").val() === "2") {
                           <input type="hidden" name="sales_order_ids[]" value="${orderDbId}">
                       </td>
                       <td>${itemName}</td>
-                      <td class="item-price">${parseFloat(sellingPrice).toFixed(2)}</td>
+                      <td class="item-price">${parseFloat(sellingPrice).toFixed(
+                        2
+                      )}</td>
                       <td class="item-qty">${qty}</td>
                       <td class="item-discount">${discount}</td>
                       <td>${total.toFixed(2)}</td>
@@ -3119,5 +3268,4 @@ if ($("input[name='payment_type']:checked").val() === "2") {
     $("#invoiceItemsBody").append(newRow);
     updateFinalTotal();
   }
-
 });
