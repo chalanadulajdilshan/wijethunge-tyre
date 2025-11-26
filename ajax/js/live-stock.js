@@ -588,19 +588,27 @@ jQuery(document).ready(function () {
 
   // Export functionality
   $("#exportToExcel, #exportToPdf").on("click", function () {
-    const buttonText = $(this).text().trim();
-    const isExcelExport = buttonText === "Export to Excel";
-    const isPdfExport = buttonText === "Export to PDF";
+    const $clickedButton = $(this);
+    const buttonId = $clickedButton.attr("id");
+    const isExcelExport = buttonId === "exportToExcel";
+    const isPdfExport = buttonId === "exportToPdf";
+
+    // Store original button HTML
+    const originalHtml = $clickedButton.html();
 
     // Show loading state
-    const originalText = $(this).html();
-    $(this).html(
+    $clickedButton.html(
       '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Exporting...'
     );
-    $(this).prop("disabled", true);
+    $clickedButton.prop("disabled", true);
 
     // Get current filter values
     const departmentId = $("#filter_department_id").val();
+    const brandId = $("#filter_brand_id").val();
+
+    // Debug logging
+    console.log("Export - Department ID:", departmentId);
+    console.log("Export - Brand ID:", brandId);
 
     // Make AJAX request for export data
     $.ajax({
@@ -610,6 +618,7 @@ jQuery(document).ready(function () {
       data: {
         action: "export_stock",
         department_id: departmentId,
+        brand_id: brandId,
         status: 1,
         stock_only: 1,
       },
@@ -619,9 +628,9 @@ jQuery(document).ready(function () {
 
           if (data && data.length > 0) {
             if (isPdfExport) {
-              exportToPdf(data, departmentId);
+              exportToPdf(data, departmentId, brandId);
             } else if (isExcelExport) {
-              exportToExcel(data, departmentId);
+              exportToExcel(data, departmentId, brandId);
             }
           } else {
             showAlert("No data available for export", "warning");
@@ -638,34 +647,30 @@ jQuery(document).ready(function () {
         showAlert("Export failed: " + error, "error");
       },
       complete: function () {
-        // Restore button state
-        $("#exportAllStock, #exportToExcel, #exportToPdf").each(function () {
-          const btn = $(this);
-          const text =
-            btn.attr("id") === "exportAllStock"
-              ? "Export All Stock"
-              : btn.attr("id") === "exportToExcel"
-              ? "Export to Excel"
-              : "Export to PDF";
-          btn.html(text);
-          btn.prop("disabled", false);
-        });
+        // Restore the clicked button to its original state
+        $clickedButton.html(originalHtml);
+        $clickedButton.prop("disabled", false);
       },
     });
   });
 
   // Function to export data to Excel (CSV format that opens in Excel)
-  function exportToExcel(data, departmentId) {
+  function exportToExcel(data, departmentId, brandId) {
     const deptName =
       departmentId === "all"
         ? "All Departments"
         : $("#filter_department_id option:selected").text();
+    
+    const brandName =
+      brandId === "all" || !brandId
+        ? "All Brands"
+        : $("#filter_brand_id option:selected").text();
 
     let html = `
   <html xmlns:x="urn:schemas-microsoft-com:office:excel">
   <head>
     <meta charset="UTF-8">
-    <title>Stock Report - ${deptName}</title>
+    <title>Stock Report - ${brandName}</title>
     <style>
       @page { margin: 20px; }
       body { 
@@ -752,7 +757,7 @@ jQuery(document).ready(function () {
   </head>
   <body>
     <div class="header">
-      <h1>Live Stock Report - ${deptName}</h1>
+      <h1>Live Stock Report - ${brandName}</h1>
       <p>Generated on ${new Date().toLocaleString()}</p>
     </div>
 
@@ -920,7 +925,7 @@ jQuery(document).ready(function () {
       .toISOString()
       .slice(0, 19)
       .replace(/[:.]/g, "-");
-    link.download = `stock_report_${deptName.replace(
+    link.download = `stock_report_${brandName.replace(
       /\s+/g,
       "_"
     )}_${timestamp}.xls`;
@@ -933,19 +938,24 @@ jQuery(document).ready(function () {
   }
 
   // Function to export data to PDF
-  function exportToPdf(data, departmentId) {
+  function exportToPdf(data, departmentId, brandId) {
     // Create HTML content for PDF
     const deptName =
       departmentId === "all"
         ? "All Departments"
         : $("#filter_department_id option:selected").text();
+    
+    const brandName =
+      brandId === "all" || !brandId
+        ? "All Brands"
+        : $("#filter_brand_id option:selected").text();
 
     let html = `
   <!DOCTYPE html>
   <html>
   <head>
       <meta charset="utf-8">
-      <title>Stock Report - ${deptName}</title>
+      <title>Stock Report - ${brandName}</title>
       <style>
           @page { margin: 20px; }
           body { 
@@ -1057,7 +1067,7 @@ jQuery(document).ready(function () {
   </head>
   <body>
       <div class="header">
-          <div class="report-title">Live Stock Report - ${deptName}</div>
+          <div class="report-title">Live Stock Report - ${brandName}</div>
           <p>Generated on ${new Date().toLocaleString()}</p>
       </div>
 
