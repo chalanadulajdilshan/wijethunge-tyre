@@ -409,6 +409,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_stock_tmp_by_item') {
             }));
         }
 
+        $lots = array_values(array_filter($lots, function ($l) {
+            return isset($l['qty']) && (float)$l['qty'] > 0;
+        }));
+
         // Decorate with ARN number and department name
         $decorated = [];
         foreach ($lots as $lot) {
@@ -820,6 +824,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_stock_items') {
         $stock_only = isset($_POST['stock_only']) ? (bool)$_POST['stock_only'] : false;
         $expand_departments = isset($_POST['expand_departments']) ? (bool)$_POST['expand_departments'] : false;
         
+        // Debug logging
+        error_log("get_stock_items - Brand ID: " . $brand_id . " | Department ID: " . $department_id);
+        
         // Build the base query
         $query = "SELECT 
                     im.id, im.code, im.name, 
@@ -892,6 +899,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_stock_items') {
         $query .= " ORDER BY im.name ASC ";
         $query .= " LIMIT $start, $length ";
         
+        // Debug: Log the query
+        error_log("get_stock_items - Query: " . $query);
+        error_log("get_stock_items - Total Records: " . $totalRecords);
+        
         // Execute the query
         $result = $db->readQuery($query);
         
@@ -939,6 +950,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'get_stock_items') {
             }
         }
         
+        // Debug: Log result count
+        error_log("get_stock_items - Data count returned: " . count($data));
+        
         // Return JSON response
         echo json_encode([
             'draw' => $draw,
@@ -966,8 +980,13 @@ if (isset($_POST['action']) && $_POST['action'] === 'export_stock') {
     try {
         // Get filter parameters
         $department_id = isset($_POST['department_id']) ? $_POST['department_id'] : 'all';
+        $brand_id = isset($_POST['brand_id']) ? $_POST['brand_id'] : 'all';
         $status = isset($_POST['status']) ? (int)$_POST['status'] : 1;
         $stock_only = isset($_POST['stock_only']) ? (int)$_POST['stock_only'] : 1;
+
+        // Debug logging
+        error_log("Export Stock - Brand ID received: " . var_export($brand_id, true));
+        error_log("Export Stock - Department ID received: " . var_export($department_id, true));
 
         $items = [];
 
@@ -985,6 +1004,21 @@ if (isset($_POST['action']) && $_POST['action'] === 'export_stock') {
                     $items[] = $item;
                 }
             }
+        }
+
+        // Apply brand filter if specified
+        error_log("Export Stock - Items before brand filter: " . count($items));
+        if ($brand_id !== 'all' && $brand_id !== '' && $brand_id !== null && $brand_id !== 0 && $brand_id !== '0') {
+            $brand_id_int = (int)$brand_id;
+            error_log("Export Stock - Applying brand filter for brand_id: " . $brand_id_int);
+            
+            $filtered_items = array_filter($items, function($item) use ($brand_id_int) {
+                $item_brand = isset($item['brand']) ? (int)$item['brand'] : 0;
+                error_log("Export Stock - Item: " . $item['code'] . " | Item Brand: " . $item_brand . " | Filter Brand: " . $brand_id_int . " | Match: " . ($item_brand === $brand_id_int ? 'YES' : 'NO'));
+                return $item_brand === $brand_id_int;
+            });
+            $items = array_values($filtered_items); // Re-index array
+            error_log("Export Stock - Items after brand filter: " . count($items));
         }
 
         // Transform data for export format
